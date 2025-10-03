@@ -28,17 +28,17 @@ Es una aplicación web basada en Flask, y con uso de una base de datos de SQLite
 
 * Actualmente, dentro de la interfaz web, se tienen 8 opciones principales, dentro de las cuales hay algunas funcionalidades ya implementadas pero otras más en desarrollo, estas son:
 
-Dashboard (funciona)
-Clientes (funciona)
-Mascotas (funciona)
-Citas (funciona)
-Facturación (En desarrollo)
-Inventario (En desarrollo)
-Calendario (En desarrollo)
-Reportes (En desarrollo)
+1. Dashboard (funciona)
+2. Clientes (funciona)
+3. Mascotas (funciona)
+4. Citas (funciona)
+5. Facturación (En desarrollo)
+6. Inventario (En desarrollo)
+7. Calendario (En desarrollo)
+8. Reportes (En desarrollo)
 
 Además, existe otro módulo interno que se denomina Usuarios. Donde se gestionará el CRUD completo y tendrá funcionalidades como gestionar los usuarios, dependiendo del rol con el cual se inicie sesión.
 
-Usuarios (En desarrollo)
+9. Usuarios (En desarrollo)
 
 * Actualmente el sistema sólo sirve para gestionar (CRUD completo) todo lo relacionado con: Clientes, Mascotas y Citas, sin embargo, evidentemente carece de las demás features marcadas como "(En desarrollo)"
