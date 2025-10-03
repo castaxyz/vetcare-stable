@@ -1,0 +1,586 @@
+{% extends "base.html" %}
+
+{% block title %}Cita #{{ appointment.id }} - VetCare{% endblock %}
+
+{% block extra_css %}
+<style>
+    .appointment-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+    
+    .status-badge {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+    
+    .status-scheduled { background-color: #6c757d; color: white; }
+    .status-confirmed { background-color: #17a2b8; color: white; }
+    .status-in_progress { background-color: #ffc107; color: #000; }
+    .status-completed { background-color: #28a745; color: white; }
+    .status-cancelled { background-color: #dc3545; color: white; }
+    .status-no_show { background-color: #fd7e14; color: white; }
+    
+    .info-card {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .info-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .info-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+    
+    .info-icon {
+        width: 30px;
+        color: #6c757d;
+        font-size: 1.1rem;
+        text-align: center;
+        margin-right: 0.75rem;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #495057;
+        min-width: 120px;
+    }
+    
+    .info-value {
+        color: #212529;
+        flex-grow: 1;
+    }
+    
+    .editable-field {
+        cursor: pointer;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        border: 1px dashed transparent;
+    }
+    
+    .editable-field:hover {
+        background-color: #e3f2fd;
+        border-color: #2196f3;
+    }
+    
+    .pet-avatar {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    
+    .action-card {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .timeline-item {
+        border-left: 3px solid #dee2e6;
+        padding-left: 1rem;
+        margin-bottom: 1rem;
+        position: relative;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -6px;
+        top: 0.5rem;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #6c757d;
+    }
+    
+    .timeline-item.active {
+        border-left-color: #007bff;
+    }
+    
+    .timeline-item.active::before {
+        background: #007bff;
+    }
+    
+    .notes-section {
+        background: #f8f9fa;
+        border-left: 4px solid #007bff;
+        padding: 1rem;
+        border-radius: 0 4px 4px 0;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header de la Cita -->
+    <div class="appointment-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center mb-2">
+                    <i class="bi bi-calendar-check me-3" style="font-size: 2rem;"></i>
+                    <div>
+                        <h2 class="mb-1">Cita #{{ appointment.id }}</h2>
+                        <p class="mb-0 opacity-75">
+                            {{ appointment.appointment_date.strftime('%A, %d de %B de %Y') }} a las 
+                            {{ appointment.appointment_date.strftime('%H:%M') }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <span class="status-badge status-{{ appointment.status.value }}">
+                    {% if appointment.status.value == 'scheduled' %}Programada
+                    {% elif appointment.status.value == 'confirmed' %}Confirmada
+                    {% elif appointment.status.value == 'in_progress' %}En Progreso
+                    {% elif appointment.status.value == 'completed' %}Completada
+                    {% elif appointment.status.value == 'cancelled' %}Cancelada
+                    {% elif appointment.status.value == 'no_show' %}No Asistió
+                    {% else %}{{ appointment.status.value }}
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        
+        <!-- Acciones Rápidas en Header -->
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="d-flex flex-wrap gap-2">
+                    {% if appointment.status.value == 'scheduled' %}
+                        <form method="post" action="{{ url_for('appointments.confirm_appointment', appointment_id=appointment.id) }}" class="d-inline">
+                            <button type="submit" class="btn btn-success btn-sm">
+                                <i class="bi bi-check-circle me-1"></i>Confirmar Cita
+                            </button>
+                        </form>
+                    {% elif appointment.status.value == 'confirmed' %}
+                        <form method="post" action="{{ url_for('appointments.start_appointment', appointment_id=appointment.id) }}" class="d-inline">
+                            <button type="submit" class="btn btn-warning btn-sm">
+                                <i class="bi bi-play-circle me-1"></i>Iniciar Atención
+                            </button>
+                        </form>
+                    {% elif appointment.status.value == 'in_progress' %}
+                        <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#completeModal">
+                            <i class="bi bi-check-circle me-1"></i>Completar Cita
+                        </button>
+                    {% endif %}
+
+                    {% if appointment.status.value in ['scheduled', 'confirmed'] %}
+                        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                            <i class="bi bi-x-circle me-1"></i>Cancelar Cita
+                        </button>
+                    {% endif %}
+                    
+                    <a href="{{ url_for('appointments.list_appointments') }}" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-arrow-left me-1"></i>Volver a Lista
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información Principal -->
+        <div class="col-lg-8">
+            <!-- Información de la Mascota y Cliente -->
+            <div class="info-card">
+                <h5 class="mb-3"><i class="bi bi-heart me-2"></i>Información del Paciente</h5>
+                
+                {% if pet %}
+                <div class="row">
+                    <div class="col-md-2 text-center">
+                        <div class="pet-avatar">
+                            {{ pet.name[0].upper() }}
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="info-item">
+                            <i class="bi bi-heart-fill info-icon"></i>
+                            <span class="info-label">Nombre:</span>
+                            <span class="info-value">{{ pet.name }}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="bi bi-collection info-icon"></i>
+                            <span class="info-label">Especie:</span>
+                            <span class="info-value">{{ pet.species.value.title() }}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="bi bi-tag info-icon"></i>
+                            <span class="info-label">Raza:</span>
+                            <span class="info-value">{{ pet.breed or 'No especificada' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="bi bi-calendar3 info-icon"></i>
+                            <span class="info-label">Edad:</span>
+                            <span class="info-value">
+                                {% if pet.birth_date %}
+                                    {{ pet.age }} años
+                                {% else %}
+                                    No especificada
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        {% if client %}
+                        <div class="info-item">
+                            <i class="bi bi-person info-icon"></i>
+                            <span class="info-label">Propietario:</span>
+                            <span class="info-value">
+                                <a href="{{ url_for('clients.view_client', client_id=client.id) }}" class="text-decoration-none">
+                                    {{ client.full_name }}
+                                </a>
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <i class="bi bi-telephone info-icon"></i>
+                            <span class="info-label">Teléfono:</span>
+                            <span class="info-value">
+                                {% if client.phone %}
+                                    <a href="tel:{{ client.phone }}" class="text-decoration-none">{{ client.phone }}</a>
+                                {% else %}
+                                    No disponible
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <i class="bi bi-envelope info-icon"></i>
+                            <span class="info-label">Email:</span>
+                            <span class="info-value">
+                                {% if client.email %}
+                                    <a href="mailto:{{ client.email }}" class="text-decoration-none">{{ client.email }}</a>
+                                {% else %}
+                                    No disponible
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <i class="bi bi-geo-alt info-icon"></i>
+                            <span class="info-label">Dirección:</span>
+                            <span class="info-value">{{ client.address or 'No disponible' }}</span>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Información del propietario no disponible
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Información de la mascota no disponible
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Detalles Editables de la Cita -->
+            <div class="info-card">
+                <h5 class="mb-3"><i class="bi bi-clipboard-pulse me-2"></i>Detalles de la Cita</h5>
+                
+                <form method="post" id="editAppointmentForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="appointment_date" class="form-label">Fecha</label>
+                                <input type="date" class="form-control" id="appointment_date" name="appointment_date" 
+                                       value="{{ appointment.appointment_date.strftime('%Y-%m-%d') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="appointment_time" class="form-label">Hora</label>
+                                <input type="time" class="form-control" id="appointment_time" name="appointment_time" 
+                                       value="{{ appointment.appointment_date.strftime('%H:%M') }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="duration_minutes" class="form-label">Duración</label>
+                                <select class="form-select" id="duration_minutes" name="duration_minutes">
+                                    <option value="30" {% if appointment.duration_minutes == 30 %}selected{% endif %}>30 minutos</option>
+                                    <option value="45" {% if appointment.duration_minutes == 45 %}selected{% endif %}>45 minutos</option>
+                                    <option value="60" {% if appointment.duration_minutes == 60 %}selected{% endif %}>60 minutos</option>
+                                    <option value="90" {% if appointment.duration_minutes == 90 %}selected{% endif %}>90 minutos</option>
+                                    <option value="120" {% if appointment.duration_minutes == 120 %}selected{% endif %}>120 minutos</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="appointment_type" class="form-label">Tipo de Cita</label>
+                                <select class="form-select" id="appointment_type" name="appointment_type">
+                                    {% for type in appointment_types %}
+                                        <option value="{{ type.value }}" {% if appointment.appointment_type == type %}selected{% endif %}>
+                                            {{ type.value.replace('_', ' ').title() }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">Motivo de la Cita</label>
+                        <textarea class="form-control" id="reason" name="reason" rows="3">{{ appointment.reason or '' }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notas Adicionales</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3">{{ appointment.notes or '' }}</textarea>
+                    </div>
+
+                    {% if appointment.completion_notes %}
+                    <div class="mb-3">
+                        <label class="form-label">Notas de Finalización</label>
+                        <div class="alert alert-success">
+                            {{ appointment.completion_notes }}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if appointment.cancellation_reason %}
+                    <div class="mb-3">
+                        <label class="form-label">Motivo de Cancelación</label>
+                        <div class="alert alert-danger">
+                            {{ appointment.cancellation_reason }}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-1"></i>Guardar Cambios
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Restablecer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Panel Lateral -->
+        <div class="col-lg-4">
+            <!-- Información del Sistema -->
+            <div class="action-card">
+                <h5><i class="bi bi-info-circle me-2"></i>Información del Sistema</h5>
+                
+                <div class="info-item">
+                    <i class="bi bi-person-badge info-icon"></i>
+                    <span class="info-label">Veterinario:</span>
+                    <span class="info-value">
+                        {% if veterinarian %}
+                            Dr(a). {{ veterinarian.first_name }} {{ veterinarian.last_name }}
+                        {% else %}
+                            Por asignar
+                        {% endif %}
+                    </span>
+                </div>
+
+                <div class="info-item">
+                    <i class="bi bi-person-plus info-icon"></i>
+                    <span class="info-label">Creado por:</span>
+                    <span class="info-value">
+                        {% if creator %}
+                            {{ creator.first_name }} {{ creator.last_name }}
+                        {% else %}
+                            Sistema
+                        {% endif %}
+                    </span>
+                </div>
+
+                <div class="info-item">
+                    <i class="bi bi-calendar-plus info-icon"></i>
+                    <span class="info-label">Fecha creación:</span>
+                    <span class="info-value">{{ appointment.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                </div>
+
+                {% if appointment.updated_at %}
+                <div class="info-item">
+                    <i class="bi bi-arrow-repeat info-icon"></i>
+                    <span class="info-label">Última actualización:</span>
+                    <span class="info-value">{{ appointment.updated_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Timeline de Estados -->
+            <div class="action-card">
+                <h5><i class="bi bi-clock-history me-2"></i>Historial</h5>
+                
+                <div class="timeline-item {% if appointment.status.value == 'scheduled' %}active{% endif %}">
+                    <h6 class="mb-1">Programada</h6>
+                    <small class="text-muted">{{ appointment.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                </div>
+                
+                {% if appointment.status.value in ['confirmed', 'in_progress', 'completed'] %}
+                <div class="timeline-item {% if appointment.status.value == 'confirmed' %}active{% endif %}">
+                    <h6 class="mb-1">Confirmada</h6>
+                    <small class="text-muted">Estado confirmado</small>
+                </div>
+                {% endif %}
+                
+                {% if appointment.status.value in ['in_progress', 'completed'] %}
+                <div class="timeline-item {% if appointment.status.value == 'in_progress' %}active{% endif %}">
+                    <h6 class="mb-1">En Progreso</h6>
+                    <small class="text-muted">Atención iniciada</small>
+                </div>
+                {% endif %}
+                
+                {% if appointment.status.value == 'completed' %}
+                <div class="timeline-item active">
+                    <h6 class="mb-1">Completada</h6>
+                    <small class="text-muted">Atención finalizada</small>
+                </div>
+                {% endif %}
+                
+                {% if appointment.status.value == 'cancelled' %}
+                <div class="timeline-item" style="border-left-color: #dc3545;">
+                    <h6 class="mb-1" style="color: #dc3545;">Cancelada</h6>
+                    <small class="text-muted">Cita cancelada</small>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Acciones Rápidas -->
+            <div class="action-card">
+                <h5><i class="bi bi-lightning me-2"></i>Acciones Rápidas</h5>
+                
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('appointments.create_appointment', pet_id=pet.id if pet else '') }}" 
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-calendar-plus me-1"></i>Nueva Cita para {{ pet.name if pet else 'esta mascota' }}
+                    </a>
+                    
+                    {% if pet %}
+                    <a href="{{ url_for('pets.view_pet', pet_id=pet.id) }}" class="btn btn-outline-info btn-sm">
+                        <i class="bi bi-heart me-1"></i>Ver Historial de {{ pet.name }}
+                    </a>
+                    {% endif %}
+                    
+                    {% if client and client.phone %}
+                    <a href="tel:{{ client.phone }}" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-telephone me-1"></i>Llamar a {{ client.first_name }}
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Completar Cita -->
+<div class="modal fade" id="completeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-check-circle me-2"></i>Completar Cita
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ url_for('appointments.complete_appointment', appointment_id=appointment.id) }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="completion_notes" class="form-label">Notas de Finalización</label>
+                        <textarea class="form-control" id="completion_notes" name="completion_notes" rows="4" 
+                                  placeholder="Describe el resultado de la consulta, tratamientos aplicados, recomendaciones, etc."></textarea>
+                        <div class="form-text">Describe qué se realizó durante la consulta</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle me-1"></i>Completar Cita
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Cancelar Cita -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-x-circle me-2"></i>Cancelar Cita
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ url_for('appointments.cancel_appointment', appointment_id=appointment.id) }}">
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        ¿Está seguro de que desea cancelar esta cita?
+                    </div>
+                    <div class="mb-3">
+                        <label for="cancellation_reason" class="form-label">Motivo de Cancelación *</label>
+                        <textarea class="form-control" id="cancellation_reason" name="cancellation_reason" rows="3" 
+                                  placeholder="Indique el motivo de la cancelación..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No Cancelar</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-x-circle me-1"></i>Sí, Cancelar Cita
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-focus en modales
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modal => {
+        modal.addEventListener('shown.bs.modal', function() {
+            const textarea = this.querySelector('textarea');
+            if (textarea) {
+                textarea.focus();
+            }
+        });
+    });
+});
+
+function resetForm() {
+    if (confirm('¿Está seguro de que desea descartar los cambios?')) {
+        location.reload();
+    }
+}
+</script>
+{% endblock %}

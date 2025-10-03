@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - VetCare360{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-speedometer2 me-2"></i>Dashboard
+            </h1>
+            <p class="text-muted mb-0">
+                Bienvenido, {{ current_user.first_name }}.
+            </p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-outline-primary" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+            </button>
+        </div>
+    </div>
+
+    <!-- Estadísticas principales -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">{{ stats.total_clients }}</h4>
+                            <small>Clientes Registrados</small>
+                        </div>
+                        <i class="bi bi-people" style="font-size: 2rem; opacity: 0.7;"></i>
+                    </div>
+                    <div class="mt-2">
+                        <a href="{{ url_for('clients.list_clients') }}" class="text-white text-decoration-none">
+                            <small><i class="bi bi-arrow-right me-1"></i>Ver todos</small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">{{ stats.total_pets }}</h4>
+                            <small>Mascotas Activas</small>
+                        </div>
+                        <i class="bi bi-heart" style="font-size: 2rem; opacity: 0.7;"></i>
+                    </div>
+                    <div class="mt-2">
+                        <a href="{{ url_for('pets.list_pets') }}" class="text-white text-decoration-none">
+                            <small><i class="bi bi-arrow-right me-1"></i>Ver todas</small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">{{ stats.appointments_today }}</h4>
+                            <small>Citas Hoy</small>
+                        </div>
+                        <i class="bi bi-calendar-check" style="font-size: 2rem; opacity: 0.7;"></i>
+                    </div>
+                    <div class="mt-2">
+                        <a href="{{ url_for('appointments.list_appointments') }}" class="text-dark text-decoration-none">
+                            <small><i class="bi bi-arrow-right me-1"></i>Ver agenda</small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">{{ stats.upcoming_appointments }}</h4>
+                            <small>Próximas 24h</small>
+                        </div>
+                        <i class="bi bi-clock" style="font-size: 2rem; opacity: 0.7;"></i>
+                    </div>
+                    <div class="mt-2">
+                        <a href="{{ url_for('appointments.list_appointments') }}?status=scheduled" class="text-white text-decoration-none">
+                            <small><i class="bi bi-arrow-right me-1"></i>Ver próximas</small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Accesos rápidos -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-lightning me-2"></i>Accesos Rápidos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <a href="{{ url_for('clients.create_client') }}" class="btn btn-outline-primary w-100">
+                                <i class="bi bi-person-plus me-2"></i>Nuevo Cliente
+                            </a>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <a href="{{ url_for('pets.create_pet') }}" class="btn btn-outline-success w-100">
+                                <i class="bi bi-heart-fill me-2"></i>Nueva Mascota
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="{{ url_for('appointments.create_appointment') }}" class="btn btn-outline-warning w-100">
+                                <i class="bi bi-calendar-plus me-2"></i>Nueva Cita
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="{{ url_for('appointments.calendar_view') }}" class="btn btn-outline-info w-100">
+                                <i class="bi bi-calendar3 me-2"></i>Ver Calendario
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel lateral -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-clock me-2"></i>Sistema Listo
+                    </h6>
+                </div>
+                <div class="card-body text-center">
+                    <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                    <p class="mt-2 mb-0">VetCare está funcionando correctamente</p>
+                    <small class="text-muted">Arquitectura SOLID implementada</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

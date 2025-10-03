@@ -1,0 +1,536 @@
+{% extends "base.html" %}
+
+{% block title %}Registrar Nueva Mascota - VetCare{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: #fff;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .form-section h5 {
+        color: var(--primary-color);
+        border-bottom: 2px solid var(--primary-color);
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .required-field::after {
+        content: "*";
+        color: var(--danger-color);
+        margin-left: 3px;
+    }
+    
+    .client-search-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #ddd;
+        border-top: none;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+    }
+    
+    .client-search-item {
+        padding: 0.75rem;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .client-search-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .client-search-item:last-child {
+        border-bottom: none;
+    }
+    
+    .selected-client-info {
+        background: #e8f5e8;
+        border: 1px solid #28a745;
+        border-radius: 4px;
+        padding: 1rem;
+        margin-top: 0.5rem;
+    }
+    
+    .btn-change-client {
+        font-size: 0.875rem;
+    }
+    
+    .weight-input-group .input-group-text {
+        min-width: 45px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2>
+                        <i class="bi bi-heart-fill text-danger me-2"></i>
+                        Registrar Nueva Mascota
+                    </h2>
+                    <p class="text-muted mb-0">Complete la información de la nueva mascota</p>
+                </div>
+                <a href="{{ url_for('pets.list_pets') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Volver a Lista
+                </a>
+            </div>
+
+            <!-- Formulario Principal -->
+            <form method="POST" id="petForm" novalidate>
+                <div class="row">
+                    <!-- Información Básica -->
+                    <div class="col-lg-8">
+                        <div class="form-section">
+                            <h5><i class="bi bi-info-circle me-2"></i>Información Básica</h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="name" class="form-label required-field">Nombre</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="name" 
+                                           name="name" 
+                                           value="{{ name or '' }}"
+                                           required
+                                           placeholder="Ej: Max, Bella, Rocky">
+                                    <div class="invalid-feedback">
+                                        Por favor ingrese el nombre de la mascota.
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="species" class="form-label required-field">Especie</label>
+                                    <select class="form-select" id="species" name="species" required>
+                                        <option value="">Seleccionar especie...</option>
+                                        {% for species_option in species %}
+                                        <option value="{{ species_option.value }}" 
+                                                {{ 'selected' if species == species_option.value else '' }}>
+                                            {{ species_option.value.title() }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="invalid-feedback">
+                                        Por favor seleccione la especie.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="breed" class="form-label">Raza</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="breed" 
+                                           name="breed" 
+                                           value="{{ breed or '' }}"
+                                           placeholder="Ej: Labrador, Persa, Mestizo">
+                                    <small class="text-muted">Opcional - Deje en blanco si no conoce la raza</small>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="gender" class="form-label required-field">Sexo</label>
+                                    <select class="form-select" id="gender" name="gender" required>
+                                        <option value="">Seleccionar sexo...</option>
+                                        {% for gender_option in genders %}
+                                        <option value="{{ gender_option.value }}" 
+                                                {{ 'selected' if gender == gender_option.value else '' }}>
+                                            {{ gender_option.value.title() }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="invalid-feedback">
+                                        Por favor seleccione el sexo.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="birth_date" class="form-label">Fecha de Nacimiento</label>
+                                    <input type="date" 
+                                           class="form-control" 
+                                           id="birth_date" 
+                                           name="birth_date" 
+                                           value="{{ birth_date or '' }}">
+                                    <small class="text-muted">Opcional - Ayuda a calcular la edad</small>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="color" class="form-label">Color</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="color" 
+                                           name="color" 
+                                           value="{{ color or '' }}"
+                                           placeholder="Ej: Negro, Blanco, Marrón">
+                                    <small class="text-muted">Opcional - Color predominante</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Información Adicional -->
+                        <div class="form-section">
+                            <h5><i class="bi bi-clipboard-data me-2"></i>Información Adicional</h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="weight" class="form-label">Peso</label>
+                                    <div class="input-group weight-input-group">
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="weight" 
+                                               name="weight" 
+                                               value="{{ weight or '' }}"
+                                               step="0.1" 
+                                               min="0" 
+                                               max="200"
+                                               placeholder="0.0">
+                                        <span class="input-group-text">kg</span>
+                                    </div>
+                                    <small class="text-muted">Opcional - Peso actual de la mascota</small>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="microchip_number" class="form-label">Número de Microchip</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="microchip_number" 
+                                           name="microchip_number" 
+                                           value="{{ microchip_number or '' }}"
+                                           placeholder="Ej: 982000123456789">
+                                    <small class="text-muted">Opcional - Si la mascota tiene microchip</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Selección de Propietario -->
+                    <div class="col-lg-4">
+                        <div class="form-section">
+                            <h5><i class="bi bi-person me-2"></i>Propietario</h5>
+                            
+                            {% if selected_client %}
+                            <!-- Cliente Pre-seleccionado -->
+                            <div class="selected-client-info">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">{{ selected_client.full_name }}</h6>
+                                        <p class="mb-1 text-muted">
+                                            <i class="bi bi-envelope me-1"></i>
+                                            {{ selected_client.email or 'Sin email' }}
+                                        </p>
+                                        <p class="mb-0 text-muted">
+                                            <i class="bi bi-telephone me-1"></i>
+                                            {{ selected_client.phone or 'Sin teléfono' }}
+                                        </p>
+                                    </div>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-primary btn-change-client">
+                                        <i class="bi bi-arrow-repeat"></i> Cambiar
+                                    </button>
+                                </div>
+                                <input type="hidden" 
+                                       id="client_id" 
+                                       name="client_id" 
+                                       value="{{ selected_client.id }}" 
+                                       required>
+                            </div>
+                            
+                            <div class="client-search-container" style="display: none;">
+                            {% else %}
+                            <!-- Búsqueda de Cliente -->
+                            <div class="client-search-container">
+                            {% endif %}
+                                <label for="client_search" class="form-label required-field">
+                                    Buscar Propietario
+                                </label>
+                                <div class="position-relative">
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="client_search" 
+                                           placeholder="Escriba nombre, email o teléfono..."
+                                           autocomplete="off">
+                                    <div class="client-search-results" id="clientSearchResults"></div>
+                                </div>
+                                <small class="text-muted">
+                                    Escriba al menos 2 caracteres para buscar
+                                </small>
+                                
+                                <!-- Campo oculto para el ID del cliente seleccionado -->
+                                <input type="hidden" 
+                                       id="client_id" 
+                                       name="client_id" 
+                                       value="{{ selected_client.id if selected_client else '' }}" 
+                                       required>
+                                <div class="invalid-feedback">
+                                    Por favor seleccione un propietario.
+                                </div>
+                            </div>
+
+                            <!-- Opción para crear nuevo cliente -->
+                            <div class="mt-3">
+                                <div class="text-center">
+                                    <small class="text-muted">¿No encuentra el propietario?</small><br>
+                                    <a href="{{ url_for('clients.create_client') }}" 
+                                       class="btn btn-sm btn-outline-primary mt-1"
+                                       target="_blank">
+                                        <i class="bi bi-person-plus me-1"></i>
+                                        Crear Nuevo Cliente
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Información del Formulario -->
+                        <div class="form-section">
+                            <h6><i class="bi bi-info-circle me-2"></i>Información Importante</h6>
+                            <div class="alert alert-info">
+                                <small>
+                                    <strong>Campos requeridos:</strong> Los campos marcados con 
+                                    <span class="text-danger">*</span> son obligatorios.
+                                </small>
+                            </div>
+                            
+                            <div class="alert alert-light">
+                                <small>
+                                    <strong>Consejo:</strong> Mientras más información proporcione, 
+                                    mejor será el seguimiento médico de la mascota.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="form-section">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="{{ url_for('pets.list_pets') }}" 
+                                   class="btn btn-secondary">
+                                    <i class="bi bi-x-lg me-2"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-lg me-2"></i>Registrar Mascota
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Variables globales
+    let searchTimeout;
+    let selectedClient = {{ selected_client.id if selected_client else 'null' }};
+    
+    // Establecer fecha máxima para fecha de nacimiento (hoy)
+    const today = new Date().toISOString().split('T')[0];
+    $('#birth_date').attr('max', today);
+    
+    // Configurar búsqueda de clientes
+    $('#client_search').on('input', function() {
+        const query = $(this).val().trim();
+        
+        // Limpiar timeout anterior
+        if (searchTimeout) {
+            clearTimeout(searchTimeout);
+        }
+        
+        // Si la consulta es muy corta, ocultar resultados
+        if (query.length < 2) {
+            $('#clientSearchResults').hide().empty();
+            $('#client_id').val('');
+            return;
+        }
+        
+        // Buscar con delay para evitar muchas peticiones
+        searchTimeout = setTimeout(function() {
+            searchClients(query);
+        }, 300);
+    });
+    
+    // Función para buscar clientes
+    function searchClients(query) {
+        $.ajax({
+            url: '{{ url_for("clients.search_clients") }}',
+            type: 'GET',
+            data: { q: query },
+            success: function(clients) {
+                displaySearchResults(clients);
+            },
+            error: function() {
+                console.error('Error searching clients');
+                $('#clientSearchResults').hide().empty();
+            }
+        });
+    }
+    
+    // Mostrar resultados de búsqueda
+    function displaySearchResults(clients) {
+        const resultsContainer = $('#clientSearchResults');
+        resultsContainer.empty();
+        
+        if (clients.length === 0) {
+            resultsContainer.append(
+                '<div class="client-search-item text-muted">' +
+                '<i class="bi bi-search me-2"></i>No se encontraron clientes' +
+                '</div>'
+            );
+        } else {
+            clients.forEach(function(client) {
+                const item = $('<div class="client-search-item"></div>')
+                    .html(
+                        '<strong>' + client.name + '</strong><br>' +
+                        '<small class="text-muted">' + client.display + '</small>'
+                    )
+                    .data('client', client)
+                    .on('click', function() {
+                        selectClient(client);
+                    });
+                
+                resultsContainer.append(item);
+            });
+        }
+        
+        resultsContainer.show();
+    }
+    
+    // Seleccionar un cliente
+    function selectClient(client) {
+        $('#client_id').val(client.id);
+        $('#client_search').val(client.name);
+        $('#clientSearchResults').hide();
+        selectedClient = client.id;
+        
+        // Mostrar información del cliente seleccionado
+        showSelectedClient(client);
+    }
+    
+    // Mostrar cliente seleccionado
+    function showSelectedClient(client) {
+        const clientInfo = $(`
+            <div class="selected-client-info">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="mb-1">${client.name}</h6>
+                        <p class="mb-1 text-muted">
+                            <i class="bi bi-envelope me-1"></i>
+                            ${client.email || 'Sin email'}
+                        </p>
+                        <p class="mb-0 text-muted">
+                            <i class="bi bi-telephone me-1"></i>
+                            ${client.phone || 'Sin teléfono'}
+                        </p>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary btn-change-client">
+                        <i class="bi bi-arrow-repeat"></i> Cambiar
+                    </button>
+                </div>
+            </div>
+        `);
+        
+        $('.client-search-container').hide();
+        $('.client-search-container').after(clientInfo);
+    }
+    
+    // Cambiar cliente seleccionado
+    $(document).on('click', '.btn-change-client', function() {
+        $('.selected-client-info').remove();
+        $('.client-search-container').show();
+        $('#client_search').val('').focus();
+        $('#client_id').val('');
+        selectedClient = null;
+    });
+    
+    // Ocultar resultados al hacer click fuera
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.position-relative').length) {
+            $('#clientSearchResults').hide();
+        }
+    });
+    
+    // Validación del formulario
+    $('#petForm').on('submit', function(e) {
+        let isValid = true;
+        
+        // Validar campos requeridos
+        const requiredFields = ['name', 'species', 'gender', 'client_id'];
+        
+        requiredFields.forEach(function(field) {
+            const input = $(`#${field}`);
+            const value = input.val().trim();
+            
+            if (!value) {
+                input.addClass('is-invalid');
+                isValid = false;
+            } else {
+                input.removeClass('is-invalid');
+            }
+        });
+        
+        // Validar peso si se proporciona
+        const weight = $('#weight').val();
+        if (weight && (isNaN(weight) || parseFloat(weight) < 0 || parseFloat(weight) > 200)) {
+            $('#weight').addClass('is-invalid');
+            isValid = false;
+        } else {
+            $('#weight').removeClass('is-invalid');
+        }
+        
+        // Validar fecha de nacimiento
+        const birthDate = $('#birth_date').val();
+        if (birthDate) {
+            const today = new Date();
+            const selectedDate = new Date(birthDate);
+            
+            if (selectedDate > today) {
+                $('#birth_date').addClass('is-invalid');
+                isValid = false;
+                alert('La fecha de nacimiento no puede ser en el futuro.');
+            } else {
+                $('#birth_date').removeClass('is-invalid');
+            }
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            $('html, body').animate({
+                scrollTop: $('.is-invalid').first().offset().top - 100
+            }, 500);
+        }
+    });
+    
+    // Auto-focus en el primer campo
+    $('#name').focus();
+    
+    // Formatear campo de peso
+    $('#weight').on('blur', function() {
+        const value = parseFloat($(this).val());
+        if (!isNaN(value)) {
+            $(this).val(value.toFixed(1));
+        }
+    });
+});
+</script>
+{% endblock %}

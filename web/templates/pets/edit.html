@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Mascota - {{ pet.name }} - VetCare{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: #fff;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .form-section h5 {
+        color: var(--primary-color);
+        border-bottom: 2px solid var(--primary-color);
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .required-field::after {
+        content: "*";
+        color: var(--danger-color);
+        margin-left: 3px;
+    }
+    
+    .weight-input-group .input-group-text {
+        min-width: 45px;
+    }
+    
+    .pet-status-section {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2>
+                        <i class="bi bi-pencil-square text-warning me-2"></i>
+                        Editar Mascota: {{ pet.name }}
+                    </h2>
+                    <p class="text-muted mb-0">Actualizar información de la mascota</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('pets.view_pet', pet_id=pet.id) }}" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-eye me-2"></i>Ver Detalles
+                    </a>
+                    <a href="{{ url_for('pets.list_pets') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Volver a Lista
+                    </a>
+                </div>
+            </div>
+
+            <!-- Formulario Principal -->
+            <div class="row">
+                <div class="col-lg-8">
+                    <form method="POST" id="petEditForm" novalidate>
+                        
+                        <!-- Información Básica -->
+                        <div class="form-section">
+                            <h5><i class="bi bi-info-circle me-2"></i>Información Básica</h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="name" class="form-label required-field">Nombre</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="name" 
+                                           name="name" 
+                                           value="{{ pet.name }}"
+                                           required>
+                                    <div class="invalid-feedback">
+                                        Por favor ingrese el nombre de la mascota.
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="species" class="form-label required-field">Especie</label>
+                                    <select class="form-select" id="species" name="species" required>
+                                        {% for species_option in species %}
+                                        <option value="{{ species_option.value }}" 
+                                                {{ 'selected' if pet.species.value == species_option.value else '' }}>
+                                            {{ species_option.value.title() }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="breed" class="form-label">Raza</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="breed" 
+                                           name="breed" 
+                                           value="{{ pet.breed or '' }}">
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="gender" class="form-label required-field">Sexo</label>
+                                    <select class="form-select" id="gender" name="gender" required>
+                                        {% for gender_option in genders %}
+                                        <option value="{{ gender_option.value }}" 
+                                                {{ 'selected' if pet.gender.value == gender_option.value else '' }}>
+                                            {{ gender_option.value.title() }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="birth_date" class="form-label">Fecha de Nacimiento</label>
+                                    <input type="date" 
+                                           class="form-control" 
+                                           id="birth_date" 
+                                           name="birth_date" 
+                                           value="{{ pet.birth_date.strftime('%Y-%m-%d') if pet.birth_date else '' }}">
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="color" class="form-label">Color</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="color" 
+                                           name="color" 
+                                           value="{{ pet.color or '' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Información Adicional -->
+                        <div class="form-section">
+                            <h5><i class="bi bi-clipboard-data me-2"></i>Información Adicional</h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="weight" class="form-label">Peso</label>
+                                    <div class="input-group weight-input-group">
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="weight" 
+                                               name="weight" 
+                                               value="{{ pet.weight if pet.weight else '' }}"
+                                               step="0.1" 
+                                               min="0" 
+                                               max="200">
+                                        <span class="input-group-text">kg</span>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="microchip_number" class="form-label">Número de Microchip</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="microchip_number" 
+                                           name="microchip_number" 
+                                           value="{{ pet.microchip_number or '' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de Acción -->
+                        <div class="form-section">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <form method="post" action="{{ url_for('pets.toggle_pet_status', pet_id=pet.id) }}" class="d-inline">
+                                        {% if pet.is_active %}
+                                        <button type="submit" 
+                                                class="btn btn-outline-warning"
+                                                onclick="return confirm('¿Está seguro de desactivar esta mascota?')">
+                                            <i class="bi bi-archive me-2"></i>Desactivar Mascota
+                                        </button>
+                                        {% else %}
+                                        <button type="submit" class="btn btn-outline-success">
+                                            <i class="bi bi-check-circle me-2"></i>Activar Mascota
+                                        </button>
+                                        {% endif %}
+                                    </form>
+                                </div>
+                                <div>
+                                    <a href="{{ url_for('pets.view_pet', pet_id=pet.id) }}" 
+                                       class="btn btn-secondary me-2">
+                                        <i class="bi bi-x-lg me-2"></i>Cancelar
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-lg me-2"></i>Guardar Cambios
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Información Lateral -->
+                <div class="col-lg-4">
+                    <div class="form-section">
+                        <h6><i class="bi bi-info-circle me-2"></i>Información de Registro</h6>
+                        
+                        <div class="mb-3">
+                            <small class="text-muted d-block">Registrada:</small>
+                            <strong>{{ pet.created_at.strftime('%d/%m/%Y a las %H:%M') if pet.created_at else 'No disponible' }}</strong>
+                        </div>
+                        
+                        {% if pet.updated_at %}
+                        <div class="mb-3">
+                            <small class="text-muted d-block">Última actualización:</small>
+                            <strong>{{ pet.updated_at.strftime('%d/%m/%Y a las %H:%M') }}</strong>
+                        </div>
+                        {% endif %}
+                        
+                        {% if pet.age_in_years %}
+                        <div class="mb-3">
+                            <small class="text-muted d-block">Edad actual:</small>
+                            <strong>{{ pet.age_in_years }} año{{ 's' if pet.age_in_years != 1 else '' }}</strong>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-lightbulb me-2"></i>Consejos</h6>
+                        <ul class="mb-0 ps-3">
+                            <li class="small">Mantenga actualizado el peso para mejores diagnósticos</li>
+                            <li class="small">La fecha de nacimiento ayuda a calcular dosis de medicamentos</li>
+                            <li class="small">El microchip facilita la identificación en caso de pérdida</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Establecer fecha máxima para fecha de nacimiento (hoy)
+    const today = new Date().toISOString().split('T')[0];
+    $('#birth_date').attr('max', today);
+    
+    // Validación del formulario
+    $('#petEditForm').on('submit', function(e) {
+        let isValid = true;
+        
+        // Limpiar validaciones anteriores
+        $('.is-invalid').removeClass('is-invalid');
+        
+        // Validar campos requeridos
+        const requiredFields = ['name', 'species', 'gender'];
+        
+        requiredFields.forEach(function(field) {
+            const input = $(`#${field}`);
+            const value = input.val().trim();
+            
+            if (!value) {
+                input.addClass('is-invalid');
+                isValid = false;
+            }
+        });
+        
+        // Validar peso si se proporciona
+        const weight = $('#weight').val();
+        if (weight && (isNaN(weight) || parseFloat(weight) < 0 || parseFloat(weight) > 200)) {
+            $('#weight').addClass('is-invalid');
+            isValid = false;
+        }
+        
+        // Validar fecha de nacimiento
+        const birthDate = $('#birth_date').val();
+        if (birthDate) {
+            const today = new Date();
+            const selectedDate = new Date(birthDate);
+            
+            if (selectedDate > today) {
+                $('#birth_date').addClass('is-invalid');
+                isValid = false;
+                alert('La fecha de nacimiento no puede ser en el futuro.');
+            }
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            $('html, body').animate({
+                scrollTop: $('.is-invalid').first().offset().top - 100
+            }, 500);
+        }
+    });
+    
+    // Formatear campo de peso
+    $('#weight').on('blur', function() {
+        const value = parseFloat($(this).val());
+        if (!isNaN(value)) {
+            $(this).val(value.toFixed(1));
+        }
+    });
+    
+    // Confirmación de cambios no guardados
+    let formChanged = false;
+    $('#petEditForm input, #petEditForm select, #petEditForm textarea').on('change', function() {
+        formChanged = true;
+    });
+    
+    $(window).on('beforeunload', function() {
+        if (formChanged) {
+            return 'Tiene cambios sin guardar. ¿Está seguro de que desea salir?';
+        }
+    });
+    
+    $('#petEditForm').on('submit', function() {
+        formChanged = false; // No mostrar alerta al enviar el formulario
+    });
+});
+</script>
+{% endblock %}

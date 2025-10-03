@@ -1,0 +1,580 @@
+{% extends "base.html" %}
+
+{% block title %}Calendario de Citas - VetCare{% endblock %}
+
+{% block extra_css %}
+<!-- FullCalendar CSS -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/index.global.min.css" rel="stylesheet">
+<style>
+    .fc-event {
+        border-radius: 3px;
+        font-size: 0.85rem;
+        padding: 2px 4px;
+    }
+    
+    .fc-event-title {
+        font-weight: 500;
+    }
+    
+    .fc-daygrid-event {
+        margin-bottom: 2px;
+    }
+    
+    .fc-toolbar-title {
+        font-size: 1.5rem !important;
+        font-weight: 600;
+    }
+    
+    .fc-button {
+        text-transform: none !important;
+    }
+    
+    .fc-today-button {
+        background-color: var(--bs-success) !important;
+        border-color: var(--bs-success) !important;
+    }
+    
+    .calendar-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 20px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        font-size: 0.9rem;
+    }
+    
+    .legend-color {
+        width: 20px;
+        height: 15px;
+        border-radius: 3px;
+        margin-right: 8px;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .stats-card {
+        background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 10px;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        display: block;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .quick-actions {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 1000;
+    }
+    
+    .fab-button {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transition: all 0.3s ease;
+    }
+    
+    .fab-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+    }
+    
+    @media (max-width: 768px) {
+        .calendar-legend {
+            justify-content: center;
+        }
+        
+        .quick-actions {
+            bottom: 20px;
+            right: 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-calendar3 me-2"></i>Calendario de Citas</h2>
+            <p class="text-muted mb-0">Vista general de todas las citas programadas</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('appointments.list_appointments') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-list-ul me-1"></i>Vista Lista
+            </a>
+            <a href="{{ url_for('appointments.create_appointment') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>Nueva Cita
+            </a>
+        </div>
+    </div>
+
+    <!-- Estadísticas Rápidas -->
+    <div class="stats-card">
+        <div class="row" id="calendar-stats">
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <span class="stat-number" id="today-appointments">-</span>
+                    <span class="stat-label">Citas Hoy</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <span class="stat-number" id="week-appointments">-</span>
+                    <span class="stat-label">Esta Semana</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <span class="stat-number" id="month-appointments">-</span>
+                    <span class="stat-label">Este Mes</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <span class="stat-number" id="pending-appointments">-</span>
+                    <span class="stat-label">Pendientes</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leyenda de Colores -->
+    <div class="calendar-legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #6c757d;"></div>
+            <span>Programada</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #17a2b8;"></div>
+            <span>Confirmada</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #ffc107;"></div>
+            <span>En Progreso</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #28a745;"></div>
+            <span>Completada</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #dc3545;"></div>
+            <span>Cancelada</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #fd7e14;"></div>
+            <span>No Asistió</span>
+        </div>
+    </div>
+
+    <!-- Calendario -->
+    <div class="card">
+        <div class="card-body p-0">
+            <div id="calendar"></div>
+        </div>
+    </div>
+
+    <!-- Botón Flotante de Acciones Rápidas -->
+    <div class="quick-actions">
+        <div class="btn-group-vertical" role="group">
+            <button type="button" 
+                    class="fab-button btn btn-primary mb-2" 
+                    onclick="goToToday()"
+                    title="Ir a Hoy">
+                <i class="bi bi-calendar-date"></i>
+            </button>
+            <button type="button" 
+                    class="fab-button btn btn-success" 
+                    onclick="refreshCalendar()"
+                    title="Actualizar Calendario">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Detalles de Cita -->
+<div class="modal fade" id="appointmentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-calendar-check me-2"></i>Detalles de la Cita
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="appointmentModalBody">
+                <!-- Contenido cargado dinámicamente -->
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <a href="#" id="viewFullAppointment" class="btn btn-primary">Ver Detalles Completos</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- FullCalendar JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/index.global.min.js"></script>
+
+<script>
+let calendar;
+let calendarEvents = {{ calendar_events | tojson | safe }};
+
+// Verificar si los eventos se cargaron correctamente
+console.log('Calendar events loaded:', calendarEvents.length, 'events');
+if (calendarEvents.length === 0) {
+    console.log('No events found - this might be normal if no appointments exist');
+    
+    // Para testing: agregar algunos eventos de prueba
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    calendarEvents = [
+        {
+            id: '999',
+            title: '10:00 - Firulais (Cita de Prueba)',
+            start: today.toISOString().split('T')[0] + 'T10:00:00',
+            end: today.toISOString().split('T')[0] + 'T10:30:00',
+            color: '#17a2b8'
+        },
+        {
+            id: '998',
+            title: '14:30 - Michi (Cita de Prueba)',
+            start: tomorrow.toISOString().split('T')[0] + 'T14:30:00',
+            end: tomorrow.toISOString().split('T')[0] + 'T15:00:00',
+            color: '#28a745'
+        }
+    ];
+    console.log('Added test events for demonstration');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCalendar();
+    updateStatistics();
+    
+    // Actualizar estadísticas cada 5 minutos
+    setInterval(updateStatistics, 300000);
+});
+
+function initializeCalendar() {
+    const calendarEl = document.getElementById('calendar');
+    
+    // Validar que tenemos eventos válidos
+    if (!Array.isArray(calendarEvents)) {
+        console.error('Calendar events is not an array:', calendarEvents);
+        calendarEvents = [];
+    }
+    
+    calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        locale: 'es',
+        firstDay: 1, // Lunes como primer día
+        height: 'auto',
+        events: calendarEvents,
+        eventDisplay: 'block',
+        displayEventTime: true,
+        eventTimeFormat: {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        },
+        
+        // Configuración de colores por estado
+        eventClassNames: function(arg) {
+            return ['appointment-event'];
+        },
+        
+        // Click en evento
+        eventClick: function(info) {
+            info.jsEvent.preventDefault();
+            showAppointmentDetails(info.event.id);
+        },
+        
+        // Click en día
+        dateClick: function(info) {
+            // Redirigir a crear cita con fecha preseleccionada
+            const dateStr = info.dateStr;
+            window.location.href = `{{ url_for('appointments.create_appointment') }}?date=${dateStr}`;
+        },
+        
+        // Hover en evento
+        eventMouseEnter: function(info) {
+            info.el.style.cursor = 'pointer';
+            info.el.title = `${info.event.title}\nClick para ver detalles`;
+        },
+        
+        // Cambio de vista
+        datesSet: function(info) {
+            updateStatistics();
+        },
+        
+        // Callbacks para debugging
+        eventDidMount: function(info) {
+            console.log('Event mounted:', info.event.title, 'at', info.event.start);
+        },
+        
+        // Configuración de botones personalizados
+        customButtons: {
+            refresh: {
+                text: 'Actualizar',
+                click: function() {
+                    refreshCalendar();
+                }
+            }
+        }
+    });
+    
+    calendar.render();
+    
+    // Debug: Mostrar cuántos eventos se renderizaron
+    setTimeout(() => {
+        const renderedEvents = calendar.getEvents();
+        console.log('Events rendered in calendar:', renderedEvents.length);
+    }, 1000);
+}
+
+function showAppointmentDetails(appointmentId) {
+    const modal = new bootstrap.Modal(document.getElementById('appointmentModal'));
+    const modalBody = document.getElementById('appointmentModalBody');
+    const viewButton = document.getElementById('viewFullAppointment');
+    
+    // Mostrar loading
+    modalBody.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2">Cargando detalles de la cita...</p>
+        </div>
+    `;
+    
+    modal.show();
+    
+    // Configurar enlace del botón
+    viewButton.href = `{{ url_for('appointments.view_appointment', appointment_id=0) }}`.replace('0', appointmentId);
+    
+    // Cargar detalles (simulado - en producción sería una llamada AJAX)
+    setTimeout(() => {
+        const event = calendarEvents.find(e => e.id == appointmentId);
+        if (event) {
+            modalBody.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-calendar-event me-2"></i>Información de la Cita</h6>
+                        <p><strong>Título:</strong> ${event.title}</p>
+                        <p><strong>Fecha:</strong> ${new Date(event.start).toLocaleDateString('es-ES')}</p>
+                        <p><strong>Hora:</strong> ${new Date(event.start).toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'})}</p>
+                        <p><strong>Duración:</strong> ${Math.round((new Date(event.end) - new Date(event.start)) / 60000)} minutos</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-info-circle me-2"></i>Estado</h6>
+                        <p>
+                            <span class="badge" style="background-color: ${event.color};">
+                                ${getStatusText(event.color)}
+                            </span>
+                        </p>
+                        <p class="text-muted">
+                            <i class="bi bi-lightbulb me-1"></i>
+                            Haga clic en "Ver Detalles Completos" para más información y opciones de gestión.
+                        </p>
+                    </div>
+                </div>
+            `;
+        } else {
+            modalBody.innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    No se pudieron cargar los detalles de la cita.
+                </div>
+            `;
+        }
+    }, 500);
+}
+
+function getStatusText(color) {
+    const statusMap = {
+        '#6c757d': 'Programada',
+        '#17a2b8': 'Confirmada', 
+        '#ffc107': 'En Progreso',
+        '#28a745': 'Completada',
+        '#dc3545': 'Cancelada',
+        '#fd7e14': 'No Asistió'
+    };
+    return statusMap[color] || 'Desconocido';
+}
+
+function updateStatistics() {
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay() + 1);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    
+    let todayCount = 0;
+    let weekCount = 0;
+    let monthCount = 0;
+    let pendingCount = 0;
+    
+    calendarEvents.forEach(event => {
+        const eventDate = new Date(event.start);
+        const eventDay = new Date(eventDate.toDateString());
+        const todayDay = new Date(today.toDateString());
+        
+        // Citas de hoy
+        if (eventDay.getTime() === todayDay.getTime()) {
+            todayCount++;
+        }
+        
+        // Citas de esta semana
+        if (eventDate >= startOfWeek && eventDate <= endOfWeek) {
+            weekCount++;
+        }
+        
+        // Citas de este mes
+        if (eventDate >= startOfMonth && eventDate <= endOfMonth) {
+            monthCount++;
+        }
+        
+        // Citas pendientes (programadas y confirmadas)
+        if (event.color === '#6c757d' || event.color === '#17a2b8') {
+            pendingCount++;
+        }
+    });
+    
+    // Actualizar contadores con animación
+    animateCounter('today-appointments', todayCount);
+    animateCounter('week-appointments', weekCount);
+    animateCounter('month-appointments', monthCount);
+    animateCounter('pending-appointments', pendingCount);
+}
+
+function animateCounter(elementId, targetValue) {
+    const element = document.getElementById(elementId);
+    const currentValue = parseInt(element.textContent) || 0;
+    const increment = targetValue > currentValue ? 1 : -1;
+    const duration = 1000;
+    const steps = Math.abs(targetValue - currentValue);
+    const stepDuration = steps > 0 ? duration / steps : 0;
+    
+    if (steps === 0) return;
+    
+    let current = currentValue;
+    const timer = setInterval(() => {
+        current += increment;
+        element.textContent = current;
+        
+        if (current === targetValue) {
+            clearInterval(timer);
+        }
+    }, stepDuration);
+}
+
+function goToToday() {
+    if (calendar) {
+        calendar.today();
+    }
+}
+
+function refreshCalendar() {
+    // En una implementación real, aquí haríamos una llamada AJAX al servidor
+    // Por ahora, simplemente refrescamos la página para obtener datos actualizados
+    console.log('Refreshing calendar...');
+    
+    // Mostrar feedback visual
+    const refreshBtn = document.querySelector('.fab-button .bi-arrow-clockwise');
+    if (refreshBtn) {
+        refreshBtn.style.transform = 'rotate(360deg)';
+        refreshBtn.style.transition = 'transform 0.5s ease';
+        
+        setTimeout(() => {
+            refreshBtn.style.transform = '';
+        }, 500);
+    }
+    
+    // En producción, aquí cargaríamos nuevos datos:
+    // fetch('/appointments/calendar-data')
+    //   .then(response => response.json())
+    //   .then(data => {
+    //     calendar.removeAllEvents();
+    //     calendar.addEventSource(data.events);
+    //     updateStatistics();
+    //   });
+    
+    // Por ahora, simplemente refresca las estadísticas
+    updateStatistics();
+    
+    // Para testing, podemos recargar la página completa
+    // window.location.reload();
+}
+
+// Función para cambiar vista desde enlaces externos
+function changeCalendarView(view) {
+    if (calendar) {
+        calendar.changeView(view);
+    }
+}
+
+// Atajos de teclado
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey || e.metaKey) {
+        switch(e.key) {
+            case 't':
+                e.preventDefault();
+                goToToday();
+                break;
+            case 'r':
+                e.preventDefault();
+                refreshCalendar();
+                break;
+            case 'n':
+                e.preventDefault();
+                window.location.href = '{{ url_for("appointments.create_appointment") }}';
+                break;
+        }
+    }
+});
+</script>
+{% endblock %}

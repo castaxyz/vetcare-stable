@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block title %}Crear Cliente - VetCare{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: #fff;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .form-section h5 {
+        color: var(--primary-color);
+        border-bottom: 2px solid var(--primary-color);
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .required-field::after {
+        content: "*";
+        color: var(--danger-color);
+        margin-left: 3px;
+    }
+    
+    .phone-input-group .input-group-text {
+        font-weight: 500;
+        background-color: #e9ecef;
+        border-right: none;
+    }
+    
+    .phone-format-help {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+    
+    .id-number-help {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2>
+                        <i class="bi bi-person-plus-fill text-primary me-2"></i>
+                        Crear Nuevo Cliente
+                    </h2>
+                    <p class="text-muted mb-0">Registre la información del propietario de mascotas</p>
+                </div>
+                <a href="{{ url_for('clients.list_clients') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Volver a Lista
+                </a>
+            </div>
+
+            <!-- Formulario Principal -->
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <form method="POST" id="clientForm" novalidate>
+                        
+                        <!-- Información Personal -->
+                        <div class="form-section">
+                            <h5><i class="bi bi-person me-2"></i>Información Personal</h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="first_name" class="form-label required-field">Nombres</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="first_name" 
+                                           name="first_name" 
+                                           value="{{ first_name or '' }}"
+                                           required
+                                           placeholder="Ej: Juan Carlos">
+                                    <div class="invalid-feedback">
+                                        Por favor ingrese los nombres.
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="last_name" class="form-label required-field">Apellidos</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="last_name" 
+                                           name="last_name" 
+                                           value="{{ last_name or '' }}"
+                                           required
+                                           placeholder="Ej: García López">
+                                    <div class="invalid-feedback">
+                                        Por favor ingrese los apellidos.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="identification_number" class="form-label">Número de Identificación</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="identification_number" 
+                                           name="identification_number" 
+                                           value="{{ identification_number or '' }}"
+                                           placeholder="Ej: 12345678">
+                                    <div class="id-number-help">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Opcional - Cédula, pasaporte o documento de identidad
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="email" class="form-label">Correo Electrónico</label>
+                                    <input type="email" 
+                                           class="form-control" 
+                                           id="email" 
+                                           name="email" 
+                                           value="{{ email or '' }}"
+                                           placeholder="ejemplo@correo.com">
+                                    <div class="invalid-feedback">
+                                        Por favor ingrese un correo electrónico válido.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Información de Contacto -->
+                        <div class="form-section">
+                            <h5><i class="bi bi-telephone me-2"></i>Información de Contacto</h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="phone" class="form-label">Teléfono/Celular</label>
+                                    <div class="input-group phone-input-group">
+                                        <span class="input-group-text">
+                                            <i class="bi bi-telephone"></i> +57
+                                        </span>
+                                        <input type="tel" 
+                                               class="form-control" 
+                                               id="phone" 
+                                               name="phone" 
+                                               value="{{ phone or '' }}"
+                                               placeholder="300 000 0000"
+                                               maxlength="12"
+                                               data-format="colombian-phone">
+                                    </div>
+                                    <div class="phone-format-help">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Formato: <strong>300 000 0000</strong> (celular) o <strong>1 234 5678</strong> (fijo)
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="address" class="form-label">Dirección</label>
+                                    <textarea class="form-control" 
+                                              id="address" 
+                                              name="address" 
+                                              rows="3"
+                                              placeholder="Ej: Carrera 15 # 45-67, Apto 501&#10;Barrio Centro&#10;Medellín, Antioquia">{{ address or '' }}</textarea>
+                                    <small class="text-muted">
+                                        Opcional - Dirección completa del cliente
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Información Adicional -->
+                        <div class="form-section">
+                            <h6><i class="bi bi-info-circle me-2"></i>Información Importante</h6>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="alert alert-info">
+                                        <small>
+                                            <strong>Campos obligatorios:</strong> Los campos marcados con 
+                                            <span class="text-danger">*</span> son requeridos para crear el cliente.
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="alert alert-light">
+                                        <small>
+                                            <strong>Privacidad:</strong> La información será utilizada únicamente 
+                                            para el seguimiento médico de las mascotas.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de Acción -->
+                        <div class="form-section">
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <a href="{{ url_for('clients.list_clients') }}" 
+                                           class="btn btn-secondary">
+                                            <i class="bi bi-x-lg me-2"></i>Cancelar
+                                        </a>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-check-lg me-2"></i>Crear Cliente
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    
+    // Formateo automático de teléfono colombiano
+    $('#phone').on('input', function() {
+        let value = this.value;
+        
+        // Eliminar todos los espacios y caracteres no numéricos
+        value = value.replace(/\D/g, '');
+        
+        // Limitar la longitud según el tipo de número
+        if (value.length > 10) {
+            value = value.substring(0, 10);
+        }
+        
+        // Formatear según la longitud
+        if (value.length <= 7) {
+            // Teléfono fijo: 1 234 567 o 1 234 5678
+            if (value.length > 1 && value.length <= 4) {
+                value = value.substring(0, 1) + ' ' + value.substring(1);
+            } else if (value.length > 4) {
+                value = value.substring(0, 1) + ' ' + value.substring(1, 4) + ' ' + value.substring(4);
+            }
+        } else {
+            // Teléfono celular: 300 000 0000
+            if (value.length <= 3) {
+                // Solo los primeros 3 dígitos
+                value = value;
+            } else if (value.length <= 6) {
+                // 300 000
+                value = value.substring(0, 3) + ' ' + value.substring(3);
+            } else {
+                // 300 000 0000
+                value = value.substring(0, 3) + ' ' + value.substring(3, 6) + ' ' + value.substring(6);
+            }
+        }
+        
+        this.value = value;
+    });
+    
+    // Validar formato de teléfono colombiano
+    function isValidColombianPhone(phone) {
+        // Eliminar espacios para validar
+        const cleanPhone = phone.replace(/\s/g, '');
+        
+        if (cleanPhone.length === 0) return true; // Campo opcional
+        
+        // Celular: 10 dígitos que empiezan con 3
+        if (cleanPhone.length === 10 && cleanPhone.startsWith('3')) {
+            return /^3[0-9]{9}$/.test(cleanPhone);
+        }
+        
+        // Teléfono fijo: 7-8 dígitos que empiezan con 1-9 (no 3)
+        if (cleanPhone.length >= 7 && cleanPhone.length <= 8 && !cleanPhone.startsWith('3')) {
+            return /^[1-9][0-9]{6,7}$/.test(cleanPhone);
+        }
+        
+        return false;
+    }
+    
+    // Validación del formulario
+    $('#clientForm').on('submit', function(e) {
+        let isValid = true;
+        
+        // Limpiar validaciones anteriores
+        $('.is-invalid').removeClass('is-invalid');
+        
+        // Validar campos requeridos
+        const requiredFields = ['first_name', 'last_name'];
+        
+        requiredFields.forEach(function(field) {
+            const input = $(`#${field}`);
+            const value = input.val().trim();
+            
+            if (!value) {
+                input.addClass('is-invalid');
+                isValid = false;
+            }
+        });
+        
+        // Validar email si se proporciona
+        const email = $('#email').val().trim();
+        if (email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                $('#email').addClass('is-invalid');
+                isValid = false;
+            }
+        }
+        
+        // Validar teléfono si se proporciona
+        const phone = $('#phone').val().trim();
+        if (phone && !isValidColombianPhone(phone)) {
+            $('#phone').addClass('is-invalid');
+            // Mostrar mensaje específico
+            $('#phone').after('<div class="invalid-feedback d-block">Formato de teléfono inválido. Use: 300 000 0000 (celular) o 1 234 5678 (fijo)</div>');
+            isValid = false;
+        }
+        
+        // Validar número de identificación (solo números si se proporciona)
+        const idNumber = $('#identification_number').val().trim();
+        if (idNumber && !/^\d+$/.test(idNumber)) {
+            $('#identification_number').addClass('is-invalid');
+            $('#identification_number').after('<div class="invalid-feedback d-block">El número de identificación debe contener solo dígitos</div>');
+            isValid = false;
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            // Scroll al primer campo con error
+            $('html, body').animate({
+                scrollTop: $('.is-invalid').first().offset().top - 100
+            }, 500);
+        }
+    });
+    
+    // Auto-focus en el primer campo
+    $('#first_name').focus();
+    
+    // Limpiar mensajes de error personalizados al escribir
+    $('#phone, #identification_number').on('input', function() {
+        $(this).next('.invalid-feedback').remove();
+    });
+    
+    // Formatear nombres (primera letra mayúscula)
+    $('#first_name, #last_name').on('blur', function() {
+        const words = this.value.toLowerCase().split(' ');
+        const formattedWords = words.map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+        );
+        this.value = formattedWords.join(' ');
+    });
+    
+    // Placeholder dinámico para teléfono
+    $('#phone').on('focus', function() {
+        $(this).attr('placeholder', '300 000 0000');
+    }).on('blur', function() {
+        if (!this.value) {
+            $(this).attr('placeholder', '300 000 0000');
+        }
+    });
+});
+</script>
+{% endblock %}

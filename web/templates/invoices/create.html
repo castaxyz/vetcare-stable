@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva Factura - VetCare{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-receipt"></i> Nueva Factura</h2>
+    <a href="{{ url_for('invoices.list_invoices') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Volver a Lista
+    </a>
+</div>
+
+<form method="POST" action="{{ url_for('invoices.create_invoice') }}" id="invoiceForm">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Información de la Factura</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="client_id" class="form-label">Cliente *</label>
+                                <select class="form-select" id="client_id" name="client_id" required>
+                                    <option value="">Seleccionar cliente</option>
+                                    {% for client in clients %}
+                                    <option value="{{ client.id }}">
+                                        {{ client.first_name }} {{ client.last_name }} - {{ client.email }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="appointment_id" class="form-label">Cita (Opcional)</label>
+                                <select class="form-select" id="appointment_id" name="appointment_id">
+                                    <option value="">Sin cita asociada</option>
+                                    {% for appointment in appointments %}
+                                    <option value="{{ appointment.id }}">
+                                        {{ appointment.appointment_date.strftime('%d/%m/%Y %H:%M') }} - 
+                                        {{ appointment.appointment_type.value }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="issue_date" class="form-label">Fecha de Emisión *</label>
+                                <input type="date" class="form-control" id="issue_date" name="issue_date" 
+                                       value="{{ today }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="due_date" class="form-label">Fecha de Vencimiento</label>
+                                <input type="date" class="form-control" id="due_date" name="due_date">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="tax_percentage" class="form-label">Impuesto (%)</label>
+                                <input type="number" class="form-control" id="tax_percentage" name="tax_percentage" 
+                                       step="0.01" min="0" max="100" value="0">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="status" class="form-label">Estado</label>
+                                <select class="form-select" id="status" name="status">
+                                    <option value="DRAFT">Borrador</option>
+                                    <option value="PENDING" selected>Pendiente</option>
+                                    <option value="PAID">Pagada</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notas</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Items de la Factura -->
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Items de la Factura</h5>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="addInvoiceItem()">
+                        <i class="bi bi-plus"></i> Agregar Item
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="invoice-items">
+                        <!-- Los items se agregarán dinámicamente aquí -->
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-8"></div>
+                        <div class="col-md-4">
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Subtotal:</strong></td>
+                                    <td class="text-end" id="subtotal">$0.00</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Descuento:</strong></td>
+                                    <td class="text-end" id="discount">$0.00</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Impuesto:</strong></td>
+                                    <td class="text-end" id="tax">$0.00</td>
+                                </tr>
+                                <tr class="table-primary">
+                                    <td><strong>Total:</strong></td>
+                                    <td class="text-end" id="total"><strong>$0.00</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Acciones</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Crear Factura
+                        </button>
+                        <a href="{{ url_for('invoices.list_invoices') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Productos Disponibles</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <input type="text" class="form-control form-control-sm" 
+                               placeholder="Buscar producto..." id="product-search">
+                    </div>
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        {% for product in products %}
+                        <div class="border rounded p-2 mb-2 product-item" style="cursor: pointer;" 
+                             onclick="selectProduct('{{ product.id }}', '{{ product.name }}', '{{ product.unit_price }}')">
+                            <div class="fw-bold">{{ product.name }}</div>
+                            <div class="small text-muted">{{ product.sku }} - ${{ "%.2f"|format(product.unit_price) }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+let itemCounter = 0;
+
+function addInvoiceItem(productId = '', productName = '', unitPrice = '') {
+    itemCounter++;
+    const itemsContainer = document.getElementById('invoice-items');
+
+    const itemHtml = `
+        <div class="row mb-3 invoice-item" id="item-${itemCounter}">
+            <div class="col-md-4">
+                <label class="form-label">Producto/Servicio</label>
+                <input type="hidden" name="items[${itemCounter}][product_id]" value="${productId}">
+                <input type="text" class="form-control" name="items[${itemCounter}][description]"
+                       value="${productName}" ${productId ? 'readonly' : ''} required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Cantidad</label>
+                <input type="number" class="form-control" name="items[${itemCounter}][quantity]"
+                       min="1" value="1" onchange="calculateTotals()" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Precio Unit.</label>
+                <input type="number" class="form-control" name="items[${itemCounter}][unit_price]" 
+                       step="0.01" min="0" value="${unitPrice}" onchange="calculateTotals()" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Descuento (%)</label>
+                <input type="number" class="form-control" name="items[${itemCounter}][discount_percentage]" 
+                       step="0.01" min="0" max="100" value="0" onchange="calculateTotals()">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Acciones</label>
+                <button type="button" class="btn btn-danger btn-sm w-100" onclick="removeItem(${itemCounter})">
+                    <i class="bi bi-trash"></i> Eliminar
+                </button>
+            </div>
+        </div>
+    `;
+    
+    itemsContainer.insertAdjacentHTML('beforeend', itemHtml);
+    calculateTotals();
+}
+
+function removeItem(itemId) {
+    document.getElementById(`item-${itemId}`).remove();
+    calculateTotals();
+}
+
+function selectProduct(productId, productName, unitPrice) {
+    addInvoiceItem(productId, productName, unitPrice);
+}
+
+function calculateTotals() {
+    let subtotal = 0;
+    let totalDiscount = 0;
+    
+    document.querySelectorAll('.invoice-item').forEach(item => {
+        const quantity = parseFloat(item.querySelector('input[name*="[quantity]"]').value) || 0;
+        const unitPrice = parseFloat(item.querySelector('input[name*="[unit_price]"]').value) || 0;
+        const discountPercentage = parseFloat(item.querySelector('input[name*="[discount_percentage]"]').value) || 0;
+        
+        const itemSubtotal = quantity * unitPrice;
+        const itemDiscount = itemSubtotal * (discountPercentage / 100);
+        
+        subtotal += itemSubtotal;
+        totalDiscount += itemDiscount;
+    });
+    
+    const taxPercentage = parseFloat(document.getElementById('tax_percentage').value) || 0;
+    const taxableAmount = subtotal - totalDiscount;
+    const tax = taxableAmount * (taxPercentage / 100);
+    const total = taxableAmount + tax;
+    
+    document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
+    document.getElementById('discount').textContent = `$${totalDiscount.toFixed(2)}`;
+    document.getElementById('tax').textContent = `$${tax.toFixed(2)}`;
+    document.getElementById('total').textContent = `$${total.toFixed(2)}`;
+}
+
+// Agregar un item inicial
+document.addEventListener('DOMContentLoaded', function() {
+    addInvoiceItem();
+    
+    // Filtro de productos
+    document.getElementById('product-search').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        document.querySelectorAll('.product-item').forEach(item => {
+            const text = item.textContent.toLowerCase();
+            item.style.display = text.includes(searchTerm) ? 'block' : 'none';
+        });
+    });
+    
+    // Calcular totales cuando cambie el impuesto
+    document.getElementById('tax_percentage').addEventListener('change', calculateTotals);
+});
+</script>
+{% endblock %}

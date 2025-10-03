@@ -1,0 +1,515 @@
+{% extends "base.html" %}
+
+{% block title %}Mi Perfil - VetCare{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Mi Perfil</li>
+                </ol>
+            </nav>
+            <h1 class="h3 mb-0">
+                <i class="bi bi-person-circle me-2"></i>Mi Perfil
+            </h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información del usuario -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-person-circle text-primary" style="font-size: 4rem;"></i>
+                    </div>
+                    <h5>{{ user.full_name }}</h5>
+                    <p class="text-muted">{{ user.username }}</p>
+                    <span class="badge bg-{{ 'danger' if user.role.value == 'admin' else 'primary' if user.role.value == 'veterinarian' else 'success' }} mb-2">
+                        {% if user.role.value == 'admin' %}
+                            <i class="bi bi-shield-check me-1"></i>Administrador
+                        {% elif user.role.value == 'veterinarian' %}
+                            <i class="bi bi-clipboard-heart me-1"></i>Veterinario
+                        {% elif user.role.value == 'receptionist' %}
+                            <i class="bi bi-telephone me-1"></i>Recepcionista
+                        {% else %}
+                            <i class="bi bi-person me-1"></i>Asistente
+                        {% endif %}
+                    </span>
+                    
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar me-1"></i>
+                            Miembro desde: {{ user.created_at.strftime('%B %Y') if user.created_at }}
+                        </small>
+                    </div>
+                    
+                    {% if user.last_login %}
+                    <div class="mt-1">
+                        <small class="text-muted">
+                            <i class="bi bi-clock me-1"></i>
+                            Último acceso: {{ user.last_login.strftime('%d/%m/%Y %H:%M') }}
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Estado de la cuenta -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-shield-check me-2"></i>Estado de la Cuenta
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-{{ 'check-circle-fill text-success' if user.is_active else 'x-circle-fill text-danger' }} me-2"></i>
+                        <span>Cuenta {{ 'activa' if user.is_active else 'inactiva' }}</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-envelope-check-fill text-success me-2"></i>
+                        <span>Email: {{ user.email }}</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-lock-fill text-success me-2"></i>
+                        <span>Contraseña protegida</span>
+                    </div>
+                    {% if user.failed_login_attempts > 0 %}
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                        <span>{{ user.failed_login_attempts }} intento(s) fallido(s)</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-graph-up me-2"></i>Mi Actividad
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        <div class="row">
+                            <div class="col-6">
+                                <h5 class="text-primary mb-0">0</h5>
+                                <small class="text-muted">Citas Creadas</small>
+                            </div>
+                            <div class="col-6">
+                                <h5 class="text-success mb-0">
+                                    {{ ((user.created_at - user.created_at) if user.created_at else 0) | int }}
+                                </h5>
+                                <small class="text-muted">Días Activo</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formularios de edición -->
+        <div class="col-lg-8">
+            <!-- Información básica -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-badge me-2"></i>Información Personal
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        <input type="hidden" name="action" value="update_info">
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="first_name" class="form-label">
+                                    <i class="bi bi-person me-1"></i>Nombre *
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="first_name" 
+                                       name="first_name"
+                                       value="{{ user.first_name }}" 
+                                       required>
+                                <div class="invalid-feedback">
+                                    El nombre es requerido
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="last_name" class="form-label">
+                                    <i class="bi bi-person me-1"></i>Apellido *
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="last_name" 
+                                       name="last_name"
+                                       value="{{ user.last_name }}" 
+                                       required>
+                                <div class="invalid-feedback">
+                                    El apellido es requerido
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="username" class="form-label">
+                                    <i class="bi bi-at me-1"></i>Nombre de Usuario
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="username" 
+                                       value="{{ user.username }}" 
+                                       disabled>
+                                <div class="form-text">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    El nombre de usuario no se puede cambiar
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">
+                                    <i class="bi bi-envelope me-1"></i>Email
+                                </label>
+                                <input type="email" 
+                                       class="form-control" 
+                                       id="email" 
+                                       value="{{ user.email }}" 
+                                       disabled>
+                                <div class="form-text">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Contacta al administrador para cambiar el email
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="role" class="form-label">
+                                    <i class="bi bi-person-badge me-1"></i>Rol
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="role" 
+                                       value="{{ user.role.value.title() }}" 
+                                       disabled>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="status" class="form-label">
+                                    <i class="bi bi-shield-check me-1"></i>Estado
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="status" 
+                                       value="{{ 'Activo' if user.is_active else 'Inactivo' }}" 
+                                       disabled>
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i>Actualizar Información
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Cambiar contraseña -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-key me-2"></i>Cambiar Contraseña
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Requisitos de seguridad:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Mínimo 6 caracteres</li>
+                            <li>Al menos un número</li>
+                            <li>Diferente a la contraseña actual</li>
+                        </ul>
+                    </div>
+
+                    <form method="post" id="changePasswordForm" novalidate>
+                        <input type="hidden" name="action" value="change_password">
+                        
+                        <div class="mb-3">
+                            <label for="current_password" class="form-label">
+                                <i class="bi bi-lock me-1"></i>Contraseña Actual *
+                            </label>
+                            <div class="input-group">
+                                <input type="password" 
+                                       class="form-control" 
+                                       id="current_password" 
+                                       name="current_password"
+                                       required>
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('current_password')">
+                                    <i class="bi bi-eye" id="toggleCurrentIcon"></i>
+                                </button>
+                            </div>
+                            <div class="invalid-feedback">
+                                La contraseña actual es requerida
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="new_password" class="form-label">
+                                    <i class="bi bi-key me-1"></i>Nueva Contraseña *
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" 
+                                           class="form-control" 
+                                           id="new_password" 
+                                           name="new_password"
+                                           minlength="6"
+                                           required>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('new_password')">
+                                        <i class="bi bi-eye" id="toggleNewIcon"></i>
+                                    </button>
+                                </div>
+                                <div class="invalid-feedback">
+                                    La nueva contraseña debe tener al menos 6 caracteres
+                                </div>
+                                <div class="form-text">
+                                    <span id="passwordStrength"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="confirm_password" class="form-label">
+                                    <i class="bi bi-check-circle me-1"></i>Confirmar Nueva Contraseña *
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" 
+                                           class="form-control" 
+                                           id="confirm_password" 
+                                           name="confirm_password"
+                                           required>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('confirm_password')">
+                                        <i class="bi bi-eye" id="toggleConfirmIcon"></i>
+                                    </button>
+                                </div>
+                                <div class="invalid-feedback">
+                                    Las contraseñas no coinciden
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <button type="button" class="btn btn-outline-secondary w-100" onclick="clearPasswordForm()">
+                                    <i class="bi bi-x-lg me-1"></i>Limpiar Campos
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <button type="submit" class="btn btn-warning w-100">
+                                    <i class="bi bi-shield-lock me-1"></i>Cambiar Contraseña
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Historial de sesiones (simulado) -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-clock-history me-2"></i>Actividad Reciente
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-success rounded-circle p-2 me-3">
+                                <i class="bi bi-box-arrow-in-right text-white" style="font-size: 0.8rem;"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">Inicio de sesión</div>
+                                <small class="text-muted">Hoy a las {{ "now"|strftime('%H:%M') }}</small>
+                            </div>
+                        </div>
+                        
+                        {% if user.last_login and user.last_login.date() != user.created_at.date() %}
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-info rounded-circle p-2 me-3">
+                                <i class="bi bi-box-arrow-in-right text-white" style="font-size: 0.8rem;"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">Inicio de sesión anterior</div>
+                                <small class="text-muted">{{ user.last_login.strftime('%d/%m/%Y a las %H:%M') }}</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-flex align-items-center">
+                            <div class="bg-primary rounded-circle p-2 me-3">
+                                <i class="bi bi-person-plus text-white" style="font-size: 0.8rem;"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">Cuenta creada</div>
+                                <small class="text-muted">{{ user.created_at.strftime('%d/%m/%Y a las %H:%M') if user.created_at }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Validación de contraseña
+document.getElementById('changePasswordForm').addEventListener('submit', function(e) {
+    const newPassword = document.getElementById('new_password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+    
+    if (newPassword !== confirmPassword) {
+        e.preventDefault();
+        document.getElementById('confirm_password').classList.add('is-invalid');
+        return false;
+    } else {
+        document.getElementById('confirm_password').classList.remove('is-invalid');
+    }
+    
+    // Validar fortaleza de contraseña
+    if (!validatePasswordStrength(newPassword)) {
+        e.preventDefault();
+        document.getElementById('new_password').classList.add('is-invalid');
+        return false;
+    }
+});
+
+// Validación en tiempo real de confirmación de contraseña
+document.getElementById('confirm_password').addEventListener('input', function() {
+    const newPassword = document.getElementById('new_password').value;
+    const confirmPassword = this.value;
+    
+    if (newPassword && confirmPassword && newPassword !== confirmPassword) {
+        this.classList.add('is-invalid');
+    } else {
+        this.classList.remove('is-invalid');
+    }
+});
+
+// Validación de fortaleza de contraseña
+document.getElementById('new_password').addEventListener('input', function() {
+    const password = this.value;
+    const strengthDiv = document.getElementById('passwordStrength');
+    
+    if (password.length === 0) {
+        strengthDiv.innerHTML = '';
+        this.classList.remove('is-invalid', 'is-valid');
+        return;
+    }
+    
+    const strength = calculatePasswordStrength(password);
+    
+    if (strength.score < 2) {
+        strengthDiv.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>${strength.feedback}</span>`;
+        this.classList.add('is-invalid');
+        this.classList.remove('is-valid');
+    } else if (strength.score < 4) {
+        strengthDiv.innerHTML = `<span class="text-warning"><i class="bi bi-info-circle me-1"></i>${strength.feedback}</span>`;
+        this.classList.remove('is-invalid');
+        this.classList.add('is-valid');
+    } else {
+        strengthDiv.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>${strength.feedback}</span>`;
+        this.classList.remove('is-invalid');
+        this.classList.add('is-valid');
+    }
+});
+
+function calculatePasswordStrength(password) {
+    let score = 0;
+    let feedback = '';
+    
+    if (password.length >= 6) score++;
+    if (password.length >= 8) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+    
+    switch (score) {
+        case 0:
+        case 1:
+            feedback = 'Contraseña muy débil';
+            break;
+        case 2:
+            feedback = 'Contraseña débil';
+            break;
+        case 3:
+            feedback = 'Contraseña moderada';
+            break;
+        case 4:
+            feedback = 'Contraseña fuerte';
+            break;
+        case 5:
+            feedback = 'Contraseña muy fuerte';
+            break;
+    }
+    
+    return { score, feedback };
+}
+
+function validatePasswordStrength(password) {
+    return password.length >= 6 && /[0-9]/.test(password);
+}
+
+// Toggle password visibility
+function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    const icon = document.getElementById(`toggle${fieldId.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('')}Icon`);
+    
+    if (field.type === 'password') {
+        field.type = 'text';
+        icon.classList.remove('bi-eye');
+        icon.classList.add('bi-eye-slash');
+    } else {
+        field.type = 'password';
+        icon.classList.remove('bi-eye-slash');
+        icon.classList.add('bi-eye');
+    }
+}
+
+// Limpiar formulario de contraseña
+function clearPasswordForm() {
+    document.getElementById('current_password').value = '';
+    document.getElementById('new_password').value = '';
+    document.getElementById('confirm_password').value = '';
+    document.getElementById('passwordStrength').innerHTML = '';
+    
+    // Limpiar clases de validación
+    document.querySelectorAll('#changePasswordForm .form-control').forEach(field => {
+        field.classList.remove('is-valid', 'is-invalid');
+    });
+}
+
+// Validación del formulario de información personal
+(function() {
+    'use strict';
+    window.addEventListener('load', function() {
+        var forms = document.getElementsByTagName('form');
+        var validation = Array.prototype.filter.call(forms, function(form) {
+            form.addEventListener('submit', function(event) {
+                if (form.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    }, false);
+})();
+</script>
+{% endblock %}

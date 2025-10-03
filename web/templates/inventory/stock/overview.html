@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Vista General de Stock - VetCare{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-boxes"></i> Vista General de Stock</h2>
+    <div>
+        <a href="{{ url_for('inventory.add_stock') }}" class="btn btn-success me-2">
+            <i class="bi bi-plus-square"></i> Agregar Stock
+        </a>
+        <a href="{{ url_for('inventory.adjust_stock') }}" class="btn btn-warning">
+            <i class="bi bi-gear"></i> Ajustar Stock
+        </a>
+    </div>
+</div>
+
+<!-- Alertas de stock -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> 
+                    Alertas de Stock Bajo ({{ low_stock_alerts|length }})
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if low_stock_alerts %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Stock Actual</th>
+                                <th>Mínimo</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for alert in low_stock_alerts %}
+                            <tr>
+                                <td>
+                                    <strong>{{ alert.product_name }}</strong>
+                                    <br><small class="text-muted">{{ alert.sku }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-warning">{{ alert.current_stock }}</span>
+                                </td>
+                                <td>{{ alert.minimum_stock }}</td>
+                                <td>
+                                    <a href="{{ url_for('inventory.add_stock') }}?product_id={{ alert.product_id }}" 
+                                       class="btn btn-sm btn-outline-success">
+                                        <i class="bi bi-plus"></i> Agregar
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="bi bi-check-circle text-success display-4"></i>
+                    <p class="text-muted mt-2">No hay productos con stock bajo</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-calendar-x"></i> 
+                    Productos Próximos a Vencer ({{ expiration_alerts|length }})
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if expiration_alerts %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Lote</th>
+                                <th>Vencimiento</th>
+                                <th>Cantidad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for alert in expiration_alerts %}
+                            <tr>
+                                <td>
+                                    <strong>{{ alert.product_name }}</strong>
+                                </td>
+                                <td>
+                                    {% if alert.batch_number %}
+                                        <code>{{ alert.batch_number }}</code>
+                                    {% else %}
+                                        <span class="text-muted">Sin lote</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-danger">
+                                        {{ alert.expiration_date.strftime('%d/%m/%Y') }}
+                                    </span>
+                                </td>
+                                <td>{{ alert.quantity }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="bi bi-check-circle text-success display-4"></i>
+                    <p class="text-muted mt-2">No hay productos próximos a vencer</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enlaces rápidos -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <a href="{{ url_for('inventory.list_products') }}" class="btn btn-outline-primary w-100">
+            <i class="bi bi-box-seam"></i> Ver Productos
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('inventory.list_categories') }}" class="btn btn-outline-secondary w-100">
+            <i class="bi bi-tags"></i> Categorías
+        </a>
+    </div>
+    <div class="col-md-3">
+        <button class="btn btn-outline-info w-100" onclick="window.print()">
+            <i class="bi bi-printer"></i> Imprimir Reporte
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="#" class="btn btn-outline-success w-100">
+            <i class="bi bi-download"></i> Exportar Excel
+        </a>
+    </div>
+</div>
+
+<!-- Resumen general -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Resumen General de Inventario</h5>
+    </div>
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col-md-3">
+                <div class="border-end">
+                    <h3 class="text-primary">0</h3>
+                    <p class="text-muted mb-0">Total Productos</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border-end">
+                    <h3 class="text-success">0</h3>
+                    <p class="text-muted mb-0">Productos Activos</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border-end">
+                    <h3 class="text-warning">{{ low_stock_alerts|length }}</h3>
+                    <p class="text-muted mb-0">Stock Bajo</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <h3 class="text-danger">{{ expiration_alerts|length }}</h3>
+                <p class="text-muted mb-0">Próximos a Vencer</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

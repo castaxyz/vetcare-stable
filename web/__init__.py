@@ -1,0 +1,1 @@
+# Archivo vacío - hace que Python reconozca web como paquete

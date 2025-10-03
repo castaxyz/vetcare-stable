@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Mascotas - VetCare{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-heart me-2"></i>Mascotas
+            </h1>
+            <p class="text-muted mb-0">Gestión de pacientes de la clínica</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('pets.create_pet') }}" class="btn btn-primary">
+                <i class="bi bi-plus me-1"></i>Nueva Mascota
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros y búsqueda -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <form method="get" class="d-flex">
+                <input type="text" class="form-control me-2" name="search" 
+                       placeholder="Buscar por nombre de mascota..." 
+                       value="{{ search_query }}">
+                <button class="btn btn-outline-secondary" type="submit">
+                    <i class="bi bi-search"></i>
+                </button>
+            </form>
+        </div>
+        <div class="col-md-6 text-end">
+            <div class="form-check form-switch d-inline-block">
+                <input class="form-check-input" type="checkbox" id="showInactive" 
+                       {{ 'checked' if show_inactive else '' }}
+                       onchange="toggleInactive()">
+                <label class="form-check-label" for="showInactive">
+                    Mostrar inactivas
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de mascotas -->
+    <div class="card">
+        <div class="card-body">
+            {% if pets_with_owners %}
+            <div class="row">
+                {% for item in pets_with_owners %}
+                {% set pet = item.pet %}
+                {% set owner = item.owner %}
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card h-100 {{ 'border-secondary' if not pet.is_active }}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-heart-fill text-danger me-1"></i>
+                                    {{ pet.name }}
+                                    {% if not pet.is_active %}
+                                        <span class="badge bg-secondary ms-2">Inactiva</span>
+                                    {% endif %}
+                                </h5>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                            type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-three-dots"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="{{ url_for('pets.view_pet', pet_id=pet.id) }}">
+                                            <i class="bi bi-eye me-2"></i>Ver Detalles
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('pets.edit_pet', pet_id=pet.id) }}">
+                                            <i class="bi bi-pencil me-2"></i>Editar
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('appointments.create_appointment') }}?pet_id={{ pet.id }}">
+                                            <i class="bi bi-calendar-plus me-2"></i>Nueva Cita
+                                        </a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-tag me-1"></i>{{ pet.species.value.title() }}
+                                    {% if pet.breed %} - {{ pet.breed }}{% endif %}
+                                </small>
+                            </div>
+                            
+                            {% if pet.age_in_years %}
+                            <div class="mb-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar me-1"></i>{{ pet.age_in_years }} año{{ 's' if pet.age_in_years != 1 }}
+                                </small>
+                            </div>
+                            {% endif %}
+                            
+                            {% if pet.weight %}
+                            <div class="mb-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-speedometer me-1"></i>{{ pet.weight }} kg
+                                </small>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="mb-3">
+                                <span class="badge bg-{{ 'primary' if pet.gender.value == 'male' else 'pink' if pet.gender.value == 'female' else 'secondary' }}">
+                                    {% if pet.gender.value == 'male' %}
+                                        <i class="bi bi-gender-male me-1"></i>Macho
+                                    {% elif pet.gender.value == 'female' %}
+                                        <i class="bi bi-gender-female me-1"></i>Hembra
+                                    {% else %}
+                                        <i class="bi bi-question me-1"></i>No especificado
+                                    {% endif %}
+                                </span>
+                                
+                                {% if pet.color %}
+                                <span class="badge bg-light text-dark ms-1">{{ pet.color }}</span>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Propietario -->
+                            <div class="border-top pt-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-person me-1"></i>
+                                    {% if owner %}
+                                        <a href="{{ url_for('clients.view_client', client_id=owner.id) }}" 
+                                           class="text-decoration-none">
+                                            {{ owner.full_name }}
+                                        </a>
+                                        {% if owner.phone %}
+                                            <br>
+                                            <i class="bi bi-telephone me-1"></i>{{ owner.phone }}
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-warning">Propietario no encontrado</span>
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <div class="d-flex justify-content-between">
+                                <small class="text-muted">
+                                    Reg: {{ pet.created_at.strftime('%d/%m/%Y') if pet.created_at }}
+                                </small>
+                                <div>
+                                    <a href="{{ url_for('pets.view_pet', pet_id=pet.id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        Ver Más
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-heart text-muted" style="font-size: 4rem;"></i>
+                <h4 class="mt-3 text-muted">No hay mascotas registradas</h4>
+                <p class="text-muted">Comienza registrando la primera mascota</p>
+                <a href="{{ url_for('pets.create_pet') }}" class="btn btn-primary">
+                    <i class="bi bi-plus me-1"></i>Registrar Primera Mascota
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.bg-pink {
+    background-color: #e91e63 !important;
+}
+.card:hover {
+    transform: translateY(-2px);
+    transition: transform 0.2s ease-in-out;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleInactive() {
+    const checkbox = document.getElementById('showInactive');
+    const currentUrl = new URL(window.location);
+    
+    if (checkbox.checked) {
+        currentUrl.searchParams.set('show_inactive', 'true');
+    } else {
+        currentUrl.searchParams.delete('show_inactive');
+    }
+    
+    window.location.href = currentUrl.toString();
+}
+</script>
+{% endblock %}

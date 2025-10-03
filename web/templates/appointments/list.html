@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Citas - VetCare{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Simple -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-calendar-check me-2"></i>Lista de Citas</h2>
+            <p class="text-muted mb-0">Gestiona las citas veterinarias</p>
+        </div>
+        <a href="{{ url_for('appointments.create_appointment') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Nueva Cita
+        </a>
+    </div>
+
+    <!-- Filtros Básicos -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="date" class="form-label">Fecha</label>
+                    <input type="date" class="form-control" id="date" name="date" 
+                           value="{{ date_filter or '' }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="status" class="form-label">Estado</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="all" {% if not status_filter or status_filter == 'all' %}selected{% endif %}>Todos los estados</option>
+                        {% if appointment_statuses %}
+                            {% for status in appointment_statuses %}
+                                <option value="{{ status.value }}" {% if status_filter == status.value %}selected{% endif %}>
+                                    {{ status.value.replace('_', ' ').title() }}
+                                </option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-outline-primary me-2">
+                        <i class="bi bi-funnel me-1"></i>Filtrar
+                    </button>
+                    <a href="{{ url_for('appointments.list_appointments') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Debug Info -->
+    <div class="alert alert-info">
+        <strong>Debug Info:</strong><br>
+        - Fecha filtro: {{ date_filter or 'No especificada' }}<br>
+        - Estado filtro: {{ status_filter or 'Todos' }}<br>
+        - Total citas encontradas: {{ appointments_with_info|length if appointments_with_info else 0 }}<br>
+        - appointments_with_info existe: {{ 'Sí' if appointments_with_info else 'No' }}
+    </div>
+
+    <!-- Lista Simple de Citas -->
+    {% if appointments_with_info %}
+        <div class="alert alert-success">
+            <strong>✅ Se encontraron {{ appointments_with_info|length }} citas</strong>
+        </div>
+        
+        <div class="row">
+            {% for appointment_info in appointments_with_info %}
+                {% set appointment = appointment_info.appointment %}
+                {% set pet = appointment_info.pet %}
+                {% set client = appointment_info.client %}
+                {% set veterinarian = appointment_info.veterinarian %}
+                
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <strong>{{ appointment.appointment_date.strftime('%H:%M') }}</strong>
+                            <span class="badge bg-primary float-end">{{ appointment.status.value }}</span>
+                        </div>
+                        <div class="card-body">
+                            <h6>{{ pet.name if pet else 'Mascota N/A' }}</h6>
+                            <p class="mb-1">{{ client.full_name if client else 'Cliente N/A' }}</p>
+                            <p class="small text-muted">{{ appointment.appointment_type.value.replace('_', ' ').title() }}</p>
+                        </div>
+                        <div class="card-footer">
+                            <a href="{{ url_for('appointments.edit_appointment', appointment_id=appointment.id) }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                Ver Detalles
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-warning">
+            <strong>⚠️ No se encontraron citas</strong><br>
+            Posibles causas:
+            <ul class="mb-0 mt-2">
+                <li>No hay citas programadas para la fecha seleccionada</li>
+                <li>Error en la consulta a la base de datos</li>
+                <li>Problema con los filtros aplicados</li>
+            </ul>
+        </div>
+        
+        <!-- Mensaje de ayuda -->
+        <div class="text-center py-5">
+            <i class="bi bi-calendar-x display-1 text-muted"></i>
+            <h4 class="mt-3">No hay citas disponibles</h4>
+            <p class="text-muted">Intenta cambiar los filtros o crear una nueva cita.</p>
+            <a href="{{ url_for('appointments.create_appointment') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>Crear Primera Cita
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+console.log('Template cargado correctamente');
+console.log('Número de citas en página:', document.querySelectorAll('.card').length);
+</script>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Iniciar Sesión - VetCare{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center align-items-center" style="min-height: 80vh;">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-heart-pulse-fill text-primary" style="font-size: 3rem;"></i>
+                        <h2 class="mt-2 mb-0">VetCare</h2>
+                        <p class="text-muted">Sistema de Gestión Veterinaria</p>
+                    </div>
+
+                    <form method="post" novalidate>
+                        <div class="mb-3">
+                            <label for="username" class="form-label">
+                                <i class="bi bi-person me-1"></i>Usuario o Email
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="username" 
+                                   name="username" 
+                                   value="{{ username or '' }}"
+                                   required 
+                                   autofocus>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">
+                                <i class="bi bi-lock me-1"></i>Contraseña
+                            </label>
+                            <input type="password" 
+                                   class="form-control" 
+                                   id="password" 
+                                   name="password" 
+                                   required>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" 
+                                   class="form-check-input" 
+                                   id="remember_me" 
+                                   name="remember_me">
+                            <label class="form-check-label" for="remember_me">
+                                Recordarme
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 mb-3">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
+                        </button>
+                    </form>
+
+                    <div class="text-center">
+                        <small class="text-muted">
+                            Sistema desarrollado para gestión veterinaria
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de usuarios demo -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-info-circle me-1"></i>Usuarios de Demo
+                    </h6>
+                    <small class="text-muted">
+                        <strong>Admin:</strong> admin / admin123<br>
+                        <strong>Veterinario:</strong> vet / vet123<br>
+                        <strong>Recepcionista:</strong> recep / recep123
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

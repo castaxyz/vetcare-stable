@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Reportes - VetCare{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-graph-up me-2"></i>Reportes
+            </h1>
+            <p class="text-muted mb-0">Estadísticas y análisis de la clínica</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-outline-primary" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Actualizar Datos
+            </button>
+        </div>
+    </div>
+
+    <!-- Resumen semanal -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calendar-week me-2"></i>Citas de los Últimos 7 Días
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if daily_report %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h4 class="text-primary">{{ total_week_appointments }}</h4>
+                            <p class="mb-0">Total de citas esta semana</p>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <small class="text-muted">
+                                Promedio diario: {{ "%.1f"|format(total_week_appointments / 7) }} citas
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <!-- Gráfico de barras simple con CSS -->
+                    <div class="mb-3">
+                        {% set max_count = daily_report | map(attribute='count') | max %}
+                        {% for day in daily_report %}
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small class="fw-bold">{{ day.day_name }}</small>
+                                <small class="text-muted">{{ day.date }}</small>
+                                <span class="badge bg-primary">{{ day.count }}</span>
+                            </div>
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar bg-primary" 
+                                     style="width: {{ ((day.count / max_count * 100) if max_count > 0 else 0) | round(2) }}%;">
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-graph-down text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2">No hay datos suficientes para generar el reporte</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Estadísticas generales -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-pie-chart me-2"></i>Estadísticas Generales
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <div class="border-end">
+                                <h4 class="text-info mb-0">{{ total_week_appointments }}</h4>
+                                <small class="text-muted">Citas esta semana</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h4 class="text-success mb-0">
+                                {{ daily_report | selectattr('count', '>', 0) | list | length if daily_report else 0 }}
+                            </h4>
+                            <small class="text-muted">Días con actividad</small>
+                        </div>
+                    </div>
+                    
+                    {% if daily_report %}
+                    <div class="mt-3">
+                        {% set busiest_day = daily_report | sort(attribute='count', reverse=true) | first %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-calendar-check me-2"></i>
+                            <strong>Día más ocupado:</strong> {{ busiest_day.day_name }} 
+                            ({{ busiest_day.count }} cita{{ 's' if busiest_day.count != 1 }})
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Análisis rápido -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-lightbulb me-2"></i>Análisis Rápido
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-success rounded-circle p-2 me-3">
+                            <i class="bi bi-trending-up text-white"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Sistema Activo</h6>
+                            <small class="text-muted">La clínica está registrando citas regularmente</small>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-info rounded-circle p-2 me-3">
+                            <i class="bi bi-graph-up text-white"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Datos en Tiempo Real</h6>
+                            <small class="text-muted">Los reportes se actualizan automáticamente</small>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-center">
+                        <div class="bg-warning rounded-circle p-2 me-3">
+                            <i class="bi bi-clock text-white"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Arquitectura SOLID</h6>
+                            <small class="text-muted">Sistema escalable y mantenible</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Exportar datos -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-download me-2"></i>Exportar Datos
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Exporta los datos para análisis externos</p>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary" onclick="exportToPDF()">
+                            <i class="bi bi-file-pdf me-2"></i>Exportar PDF
+                        </button>
+                        <button class="btn btn-outline-success" onclick="exportToExcel()">
+                            <i class="bi bi-file-excel me-2"></i>Exportar Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function exportToPDF() {
+    alert('Funcionalidad de exportación PDF en desarrollo');
+}
+
+function exportToExcel() {
+    alert('Funcionalidad de exportación Excel en desarrollo');
+}
+
+// Actualizar página cada 5 minutos
+setTimeout(function() {
+    location.reload();
+}, 300000);
+</script>
+{% endblock %}

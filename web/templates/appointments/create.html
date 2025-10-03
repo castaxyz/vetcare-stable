@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+
+{% block title %}Programar Nueva Cita - VetCare{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-calendar-plus me-2"></i>Programar Nueva Cita</h2>
+            <p class="text-muted mb-0">Agende una cita para atención veterinaria</p>
+        </div>
+        <a href="{{ url_for('appointments.list_appointments') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Volver a Citas
+        </a>
+    </div>
+
+    <!-- Formulario -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-form-check me-2"></i>Información de la Cita</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        <div class="row mb-3">
+                            <!-- Selección de Mascota -->
+                            <div class="col-md-6">
+                                <label for="pet_id" class="form-label">
+                                    <i class="bi bi-heart me-1"></i>Mascota *
+                                </label>
+                                <select class="form-select" id="pet_id" name="pet_id" required>
+                                    <option value="">Seleccionar mascota...</option>
+                                    {% for pet in pets %}
+                                        <option value="{{ pet.id }}" 
+                                                {% if selected_pet_id and selected_pet_id|int == pet.id %}selected{% endif %}>
+                                            {{ pet.name }} ({{ pet.species.value.title() }}) - 
+                                            {% if pet.client %}{{ pet.client.full_name }}{% else %}Propietario no disponible{% endif %}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Seleccione la mascota que será atendida</div>
+                            </div>
+
+                            <!-- Selección de Veterinario -->
+                            <div class="col-md-6">
+                                <label for="veterinarian_id" class="form-label">
+                                    <i class="bi bi-person-badge me-1"></i>Veterinario
+                                </label>
+                                <select class="form-select" id="veterinarian_id" name="veterinarian_id">
+                                    <option value="">Cualquier veterinario disponible</option>
+                                    {% for vet in veterinarians %}
+                                        <option value="{{ vet.id }}">
+                                            Dr(a). {{ vet.first_name }} {{ vet.last_name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Opcional: Seleccione un veterinario específico</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <!-- Fecha -->
+                            <div class="col-md-4">
+                                <label for="appointment_date" class="form-label">
+                                    <i class="bi bi-calendar-date me-1"></i>Fecha *
+                                </label>
+                                <input type="date" 
+                                       class="form-control" 
+                                       id="appointment_date" 
+                                       name="appointment_date"
+                                       value="{{ selected_date or '' }}"
+                                       min="{{ (today or '') }}" 
+                                       required>
+                            </div>
+
+                            <!-- Hora -->
+                            <div class="col-md-4">
+                                <label for="appointment_time" class="form-label">
+                                    <i class="bi bi-clock me-1"></i>Hora *
+                                </label>
+                                <input type="time" 
+                                       class="form-control" 
+                                       id="appointment_time" 
+                                       name="appointment_time"
+                                       min="08:00" 
+                                       max="18:00" 
+                                       required>
+                                <div class="form-text">Horario: 8:00 AM - 6:00 PM</div>
+                            </div>
+
+                            <!-- Duración -->
+                            <div class="col-md-4">
+                                <label for="duration_minutes" class="form-label">
+                                    <i class="bi bi-stopwatch me-1"></i>Duración
+                                </label>
+                                <select class="form-select" id="duration_minutes" name="duration_minutes">
+                                    <option value="30" selected>30 minutos</option>
+                                    <option value="60">60 minutos</option>
+                                    <option value="90">90 minutos</option>
+                                    <option value="120">120 minutos</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Tipo de Cita -->
+                        <div class="mb-3">
+                            <label for="appointment_type" class="form-label">
+                                <i class="bi bi-clipboard-pulse me-1"></i>Tipo de Cita *
+                            </label>
+                            <select class="form-select" id="appointment_type" name="appointment_type" required>
+                                <option value="">Seleccionar tipo...</option>
+                                {% for type in appointment_types %}
+                                    <option value="{{ type.value }}">{{ type.value.replace('_', ' ').title() }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Motivo -->
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">
+                                <i class="bi bi-chat-text me-1"></i>Motivo de la Cita
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="reason" 
+                                   name="reason"
+                                   placeholder="Ej: Vacunación, consulta general, emergencia..."
+                                   maxlength="200">
+                            <div class="form-text">Describe brevemente el motivo de la consulta</div>
+                        </div>
+
+                        <!-- Notas Adicionales -->
+                        <div class="mb-4">
+                            <label for="notes" class="form-label">
+                                <i class="bi bi-journal-text me-1"></i>Notas Adicionales
+                            </label>
+                            <textarea class="form-control" 
+                                      id="notes" 
+                                      name="notes" 
+                                      rows="3"
+                                      placeholder="Información adicional relevante para la cita..."
+                                      maxlength="500"></textarea>
+                            <div class="form-text">Opcional: Información adicional que el veterinario deba conocer</div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{{ url_for('appointments.list_appointments') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-calendar-check me-1"></i>Programar Cita
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de Ayuda -->
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Información Importante</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="fw-bold"><i class="bi bi-clock me-1"></i>Horarios de Atención</h6>
+                        <p class="small mb-2">
+                            <strong>Lunes a Viernes:</strong> 8:00 AM - 6:00 PM<br>
+                            <strong>Sábados:</strong> 8:00 AM - 2:00 PM<br>
+                            <strong>Domingos:</strong> Solo emergencias
+                        </p>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="fw-bold"><i class="bi bi-exclamation-triangle me-1"></i>Recordatorios</h6>
+                        <ul class="small mb-0">
+                            <li>Las citas deben programarse con al menos 24 horas de anticipación</li>
+                            <li>Para emergencias, contacte directamente</li>
+                            <li>Traiga la cartilla de vacunación de su mascota</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-lightbulb me-1"></i>
+                        <strong>Sugerencia:</strong> Si no está seguro del tipo de cita, seleccione "Consulta General" 
+                        y describa el motivo en el campo correspondiente.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Accesos Rápidos -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-lightning me-2"></i>Accesos Rápidos</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('pets.create_pet') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-plus-circle me-1"></i>Registrar Nueva Mascota
+                        </a>
+                        <a href="{{ url_for('clients.create_client') }}" class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-person-plus me-1"></i>Registrar Nuevo Cliente
+                        </a>
+                        <a href="{{ url_for('appointments.calendar_view') }}" class="btn btn-outline-info btn-sm">
+                            <i class="bi bi-calendar3 me-1"></i>Ver Calendario
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script para mejorar la experiencia de usuario -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const petSelect = document.getElementById('pet_id');
+    const vetSelect = document.getElementById('veterinarian_id');
+    const dateInput = document.getElementById('appointment_date');
+    const timeInput = document.getElementById('appointment_time');
+
+    // Validar que la fecha no sea en el pasado
+    dateInput.addEventListener('change', function() {
+        const selectedDate = new Date(this.value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        if (selectedDate < today) {
+            alert('No se pueden programar citas en fechas pasadas');
+            this.value = '';
+        }
+    });
+
+    // Mejorar la selección de tiempo según el día
+    dateInput.addEventListener('change', function() {
+        const selectedDate = new Date(this.value);
+        const dayOfWeek = selectedDate.getDay(); // 0 = Sunday, 6 = Saturday
+        
+        if (dayOfWeek === 0) { // Domingo
+            timeInput.min = '09:00';
+            timeInput.max = '15:00';
+            alert('Los domingos solo atendemos emergencias (9:00 AM - 3:00 PM)');
+        } else if (dayOfWeek === 6) { // Sábado
+            timeInput.min = '08:00';
+            timeInput.max = '14:00';
+        } else { // Lunes a Viernes
+            timeInput.min = '08:00';
+            timeInput.max = '18:00';
+        }
+    });
+
+    // Auto-completar algunos campos basado en el tipo de cita
+    const appointmentType = document.getElementById('appointment_type');
+    const reasonField = document.getElementById('reason');
+    const durationField = document.getElementById('duration_minutes');
+
+    appointmentType.addEventListener('change', function() {
+        const type = this.value;
+        
+        // Sugerir duración según el tipo
+        switch(type) {
+            case 'consultation':
+                durationField.value = '30';
+                if (!reasonField.value) reasonField.value = 'Consulta general';
+                break;
+            case 'vaccination':
+                durationField.value = '30';
+                if (!reasonField.value) reasonField.value = 'Vacunación';
+                break;
+            case 'surgery':
+                durationField.value = '120';
+                if (!reasonField.value) reasonField.value = 'Procedimiento quirúrgico';
+                break;
+            case 'emergency':
+                durationField.value = '60';
+                if (!reasonField.value) reasonField.value = 'Atención de emergencia';
+                break;
+            case 'follow_up':
+                durationField.value = '30';
+                if (!reasonField.value) reasonField.value = 'Control post-tratamiento';
+                break;
+        }
+    });
+
+    // Validar formulario antes de enviar
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const petId = petSelect.value;
+        const date = dateInput.value;
+        const time = timeInput.value;
+        const type = appointmentType.value;
+
+        if (!petId || !date || !time || !type) {
+            e.preventDefault();
+            alert('Por favor complete todos los campos obligatorios');
+            return;
+        }
+
+        // Confirmar la cita
+        const selectedPetText = petSelect.options[petSelect.selectedIndex].text;
+        const selectedTypeText = appointmentType.options[appointmentType.selectedIndex].text;
+        
+        if (!confirm(`¿Confirma programar una ${selectedTypeText.toLowerCase()} para ${selectedPetText} el ${date} a las ${time}?`)) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

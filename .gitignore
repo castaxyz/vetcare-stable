@@ -1,0 +1,17 @@
+/.venv
+/vetcare_dev.db
+
+# Archivos específicos de VS Code (opcional pero recomendado)
+.vscode/
+
+# Archivos de caché y compilados
+__pycache__/
+*.pyc
+
+# Archivos y directorios de entorno
+.venv/
+venv/
+.env
+
+#documentación
+/docs

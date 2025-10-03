@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Facturas - VetCare{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-receipt"></i> Gestión de Facturas</h2>
+    <a href="{{ url_for('invoices.create_invoice') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Nueva Factura
+    </a>
+</div>
+
+<!-- Filtros y búsqueda -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label for="status" class="form-label">Estado</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="all" {% if status_filter == 'all' or not status_filter %}selected{% endif %}>Todos</option>
+                    {% for status in invoice_statuses %}
+                    <option value="{{ status.value }}" {% if status_filter == status.value %}selected{% endif %}>
+                        {{ status.value.title() }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label for="search" class="form-label">Buscar</label>
+                <input type="text" class="form-control" id="search" name="search" 
+                       value="{{ search_query }}" placeholder="Número de factura o ID de cliente">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-primary me-2">
+                    <i class="bi bi-search"></i> Buscar
+                </button>
+                <a href="{{ url_for('invoices.list_invoices') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-clockwise"></i> Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Enlaces rápidos -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <a href="{{ url_for('invoices.overdue_invoices') }}" class="btn btn-outline-danger w-100">
+            <i class="bi bi-exclamation-triangle"></i> Facturas Vencidas
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('invoices.revenue_reports') }}" class="btn btn-outline-info w-100">
+            <i class="bi bi-graph-up"></i> Reportes de Ingresos
+        </a>
+    </div>
+</div>
+
+<!-- Lista de facturas -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Lista de Facturas ({{ invoices|length }})</h5>
+    </div>
+    <div class="card-body">
+        {% if invoices %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Número</th>
+                        <th>Cliente</th>
+                        <th>Fecha Emisión</th>
+                        <th>Fecha Vencimiento</th>
+                        <th>Estado</th>
+                        <th>Total</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for invoice in invoices %}
+                    <tr>
+                        <td>
+                            <strong>{{ invoice.invoice_number }}</strong>
+                        </td>
+                        <td>Cliente #{{ invoice.client_id }}</td>
+                        <td>{{ invoice.issue_date.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ invoice.due_date.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            {% if invoice.status.value == 'paid' %}
+                                <span class="badge bg-success">Pagada</span>
+                            {% elif invoice.status.value == 'pending' %}
+                                <span class="badge bg-warning">Pendiente</span>
+                            {% elif invoice.status.value == 'overdue' %}
+                                <span class="badge bg-danger">Vencida</span>
+                            {% elif invoice.status.value == 'cancelled' %}
+                                <span class="badge bg-secondary">Cancelada</span>
+                            {% else %}
+                                <span class="badge bg-info">{{ invoice.status.value.title() }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong>${{ "%.2f"|format(invoice.total_amount) }}</strong>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('invoices.view_invoice', invoice_id=invoice.id) }}" 
+                                   class="btn btn-outline-primary" title="Ver detalles">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if invoice.status.value in ['draft', 'pending'] %}
+                                <button class="btn btn-outline-secondary" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-receipt display-1 text-muted"></i>
+            <h4 class="text-muted mt-3">No hay facturas</h4>
+            <p class="text-muted">
+                {% if search_query or status_filter %}
+                    No se encontraron facturas con los filtros aplicados.
+                {% else %}
+                    Aún no se han creado facturas en el sistema.
+                {% endif %}
+            </p>
+            <a href="{{ url_for('invoices.create_invoice') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Crear Primera Factura
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
